@@ -1,0 +1,9 @@
+name = "mediescare-gateway"
+main = "worker.mjs"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Secrets, set once with:
+#   npx wrangler secret put TURSO_URL     (for example libsql://mediescare-yourname.turso.io)
+#   npx wrangler secret put TURSO_TOKEN   (a Turso database token; it never leaves Cloudflare)
+#   npx wrangler secret put SETUP_KEY     (optional; the app must send the same key to register an organisation)
