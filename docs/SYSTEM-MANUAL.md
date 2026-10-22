@@ -414,7 +414,7 @@ written once and never changed.
 |---|---|
 | `MEDIESCARE_CLOUD_URL` | Gateway address, for example `https://mediescare-gateway.<account>.workers.dev`. Empty = cloud sync "not set up". |
 | `MEDIESCARE_CLOUD_SETUP_KEY` | Must equal the gateway's `SETUP_KEY` (if set) for Head Office registration. |
-| `MEDIESCARE_GH_OWNER`, `MEDIESCARE_GH_REPO`, `GH_TOKEN` | GitHub repository for releases and auto-update (release builds). |
+| `GH_TOKEN` | GitHub token that may create releases (`npm run release`). The release repository is fixed in package.json build.publish. |
 
 **App, at run time:**
 
@@ -531,7 +531,7 @@ Indexes that made this possible are in migration 006 (covering indexes for the l
    set MEDIESCARE_CLOUD_SETUP_KEY=<the same SETUP_KEY>
    npm run dist
    ```
-   For auto-update, also set `MEDIESCARE_GH_OWNER` / `MEDIESCARE_GH_REPO` (and `GH_TOKEN` for `npm run release`).
+   Auto-update uses the repository in package.json build.publish; `npm run release` also needs `GH_TOKEN`.
 4. **Install at Head Office**, create the organisation, and store the recovery key safely. Head Office registers with
    the gateway automatically.
 5. **For each branch:** add the branch, make a join code (Computers), set up the branch's main computer with it, then

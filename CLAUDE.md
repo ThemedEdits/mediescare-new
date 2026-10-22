@@ -336,8 +336,8 @@ permissions of the user profile; optional encryption with a key held in `safeSto
   unpacked from the asar; npmRebuild is off (the prebuilt Electron binary is used).
 - **Build settings:** scripts/release.js writes src/main/build-config.json (cloud gateway address and setup key from
   MEDIESCARE_CLOUD_URL / MEDIESCARE_CLOUD_SETUP_KEY) before building and blanks it afterwards; config.js reads it.
-  `npm run dist` builds only; `npm run release` also publishes a draft GitHub Release (needs MEDIESCARE_GH_OWNER,
-  MEDIESCARE_GH_REPO, GH_TOKEN). Never run release unless the owner asks.
+  `npm run dist` builds only; `npm run release` also publishes the GitHub Release (needs GH_TOKEN and the
+  cloud settings). Never run release unless the owner asks.
 - **Auto-update** (src/main/updater.js, electron-updater 6.6.2): only in an installed copy built with a GitHub
   repository (app-update.yml present); otherwise "not set up". Checks 30 s after start and every 6 hours, downloads in
   the background, installs on "Restart and update" (Help and updates page, settings.edit; a safety backup first) or
@@ -384,7 +384,7 @@ permissions of the user profile; optional encryption with a key held in `safeSto
   Turso. The setup key is given to builds through MEDIESCARE_CLOUD_SETUP_KEY (never committed).
 - Releases live in https://github.com/ThemedEdits/mediescare-new (public). Version 1.0.0 is the first release.
 - release.js publishes releaseType "release" (drafts are invisible to installed copies) and refuses to publish without
-  the cloud URL and setup key. package.json has "repository" and build.publish = null (set by release.js flags).
+  the cloud URL and setup key. package.json build.publish is the single publisher (github ThemedEdits/mediescare-new, releaseType release); passing extra -c.publish flags once created two publishers and a half-uploaded release. release.js always blanks build-config.json, even on failure.
 - Updates: updater.js checks every hour, silent install on Restart and update (quitAndInstall(true, true)), an Update
   chip in the top bar (shell.js refreshUpdate, polled with the bell every 60 s).
 - `npm run ship` (scripts/ship.js): clean tree required, backend tests, npm version, push with the tag.

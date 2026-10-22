@@ -72,6 +72,4 @@ jobs:
         env:
           MEDIESCARE_CLOUD_URL: ${{ secrets.MEDIESCARE_CLOUD_URL }}
           MEDIESCARE_CLOUD_SETUP_KEY: ${{ secrets.MEDIESCARE_CLOUD_SETUP_KEY }}
-          MEDIESCARE_GH_OWNER: ${{ github.repository_owner }}
-          MEDIESCARE_GH_REPO: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

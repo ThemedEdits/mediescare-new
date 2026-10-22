@@ -49,13 +49,11 @@ When GitHub Actions is not set up, publish from your own computer (PowerShell):
 ```
 $env:MEDIESCARE_CLOUD_URL = "https://mediescare-gateway.mediescare.workers.dev"
 $env:MEDIESCARE_CLOUD_SETUP_KEY = "<the gateway SETUP_KEY>"
-$env:MEDIESCARE_GH_OWNER = "ThemedEdits"
-$env:MEDIESCARE_GH_REPO = "mediescare-new"
 $env:GH_TOKEN = "<a GitHub token with repo access>"
 npm run release
 ```
 
-The version in `package.json` must be new (higher than the last release), or installed copies will not update.
+The release repository is fixed in `package.json` (build.publish). The version in `package.json` must be new (higher than the last release), or installed copies will not update.
 
 ## Rules
 

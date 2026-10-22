@@ -75,7 +75,14 @@
       "include": "build/installer.nsh",
       "runAfterFinish": true
     },
-    "publish": null
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ThemedEdits",
+        "repo": "mediescare-new",
+        "releaseType": "release"
+      }
+    ]
   },
   "repository": {
     "type": "git",

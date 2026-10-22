@@ -5,7 +5,8 @@
 //                        Installed copies see the new version within an hour (Help and updates, and the top bar).
 // Settings come from environment variables and are built into the app (src/main/build-config.json):
 //   MEDIESCARE_CLOUD_URL, MEDIESCARE_CLOUD_SETUP_KEY   the cloud gateway (optional; without it cloud sync shows "not set up")
-//   MEDIESCARE_GH_OWNER, MEDIESCARE_GH_REPO            the GitHub repository that holds the releases (needed for updates)
+//   GH_TOKEN                                           a GitHub token that may create releases (npm run release only)
+// The release repository is fixed in package.json (build.publish: ThemedEdits/mediescare-new, published releases).
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -14,15 +15,15 @@ const root = path.join(__dirname, '..');
 const publish = process.argv.includes('--publish');
 const env = process.env;
 
-function run(cmd, args) {
+function run(cmd, args, { exitOnFail = true } = {}) {
   const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
-  if (r.status !== 0) process.exit(r.status === null ? 1 : r.status);
+  const status = r.status === null ? 1 : r.status;
+  if (status !== 0 && exitOnFail) process.exit(status);
+  return status;
 }
 
-const owner = env.MEDIESCARE_GH_OWNER || '';
-const repo = env.MEDIESCARE_GH_REPO || '';
-if (publish && (!owner || !repo || !env.GH_TOKEN)) {
-  console.error('Set MEDIESCARE_GH_OWNER, MEDIESCARE_GH_REPO and GH_TOKEN before a release.');
+if (publish && !env.GH_TOKEN) {
+  console.error('Set GH_TOKEN (a GitHub token that may create releases) before a release.');
   process.exit(2);
 }
 // A published installer must reach the cloud; never release one without the gateway address and setup key.
@@ -35,14 +36,13 @@ if (!fs.existsSync(path.join(root, 'build', 'icon.ico'))) run('node', ['scripts/
 const configFile = path.join(root, 'src', 'main', 'build-config.json');
 fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: env.MEDIESCARE_CLOUD_URL || '', cloudSetupKey: env.MEDIESCARE_CLOUD_SETUP_KEY || '' }, null, 2) + '\n');
 console.log(env.MEDIESCARE_CLOUD_URL ? `Cloud gateway built in: ${env.MEDIESCARE_CLOUD_URL}` : 'No cloud gateway address: cloud sync will show "not set up" (LAN sync and backups work).');
-if (!owner || !repo) console.log('No GitHub repository given: this installer will not update itself.');
 
 const args = ['electron-builder', '--win', 'nsis', '--publish', publish ? 'always' : 'never'];
-// Published (not draft): installed copies only see published releases.
-if (owner && repo) args.push('-c.publish.provider=github', `-c.publish.owner=${owner}`, `-c.publish.repo=${repo}`, '-c.publish.releaseType=release');
+let status = 1;
 try {
-  run('npx', args);
+  status = run('npx', args, { exitOnFail: false });
 } finally {
-  // Keep the address out of the source folder between builds.
+  // Always keep the address and key out of the source folder, even when the build fails.
   fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: '', cloudSetupKey: '' }, null, 2) + '\n');
 }
+process.exit(status);
