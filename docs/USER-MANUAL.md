@@ -1102,6 +1102,8 @@ or deleted. Export it if needed.
 ## 50. Help and updates
 
 - **Version** of Mediescare on this computer and the **update** state.
+- When a new version is downloading or ready, **Update** also appears in the top bar. Click it to see the version;
+  managers can press **Restart and update** there.
 - When an update has downloaded, a manager presses **Restart and update**. A safety backup is made, then Mediescare
   restarts with the new version. Updates also install when the app is closed. Your data stays as it is.
 - **Guides:** the cashier quick-start and the administrator guide.

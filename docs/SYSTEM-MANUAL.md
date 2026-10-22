@@ -451,7 +451,8 @@ definitions in `src/main/services/settings.js`).
 | `npm start` | Runs the app from source |
 | `npm run icon` | Draws `build/icon.png` and `build/icon.ico` from the SVG logo |
 | `npm run dist` | Builds `dist/Mediescare-Setup-<version>.exe` (nothing uploaded) |
-| `npm run release` | Builds and publishes a **draft** GitHub Release (only when the owner asks) |
+| `npm run release` | Builds and publishes a GitHub Release (published, not draft, so installed copies see it); refuses without the cloud settings |
+| `npm run ship` | Backend tests, version bump (patch/minor/major), commit, tag `vX.Y.Z`, push; the tag starts `.github/workflows/release.yml`, which builds and publishes the release on GitHub Actions (needs the repository secrets `MEDIESCARE_CLOUD_URL` and `MEDIESCARE_CLOUD_SETUP_KEY`) |
 
 **Installer (electron-builder, `package.json` "build"):**
 - NSIS, x64, assisted installer: "just me" or "all users", choose the folder, desktop and Start menu shortcuts.
@@ -464,12 +465,16 @@ definitions in `src/main/services/settings.js`).
 **Auto-update (`src/main/updater.js`):**
 - Active only when the build has a GitHub repository (`app-update.yml` is present). Otherwise the Help page says
   "not set up".
-- Checks 30 s after start and every 6 hours, and downloads in the background.
-- Installs on **Restart and update** (Help and updates page, needs `settings.edit`; a safety backup first) or when the
-  app closes.
+- Checks 30 s after start and every hour, and downloads in the background. While downloading or ready, an **Update**
+  chip shows in the top bar for everyone.
+- Installs silently (no installer wizard) on **Restart and update** (top bar chip or Help and updates page, needs
+  `settings.edit`; a safety backup first) and reopens, or installs when the app closes.
 - On the next start, pending migrations run, each after its own safety copy.
 
-**Versioning:** bump `version` in `package.json` before a release. Migrations must stay additive; never edit an
+**Releases:** the repository is https://github.com/ThemedEdits/mediescare-new (public; electron-updater reads its
+releases without a token). See `docs/RELEASING.md`.
+
+**Versioning:** bump `version` in `package.json` before a release (`npm run ship` does it). Migrations must stay additive; never edit an
 applied migration.
 
 ---

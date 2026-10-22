@@ -20,6 +20,7 @@ let statusTimer = null;
 const SYNC_DOT = { synced: 'success', syncing: 'success', offline: 'warning', error: 'danger', not_set_up: '' };
 let renderToken = 0;
 let bellEl = null;
+let updateChip = null;
 let bellTimer = null;
 let notes = { items: [], unread: 0 };
 
@@ -51,6 +52,29 @@ async function showNotifications(anchor) {
   if (notes.unread) {
     try { notes = await call('notifications.markSeen', {}); paintBell(); } catch (_) { /* the count stays */ }
   }
+}
+
+// The update chip appears in the top bar while a new version downloads or is ready to install. Managers can restart
+// into it at once; everyone else gets it the next time Mediescare is closed and opened.
+async function refreshUpdate() {
+  if (!updateChip) return;
+  let st;
+  try { st = await call('update.status'); } catch (_) { return; }
+  if (st.state !== 'ready' && st.state !== 'downloading') { updateChip.hidden = true; return; }
+  updateChip.hidden = false;
+  updateChip.classList.toggle('update-ready', st.state === 'ready');
+  updateChip.replaceChildren(icon('download', 'sm'), h('span.two-line', h('span.label', t('update.chipLabel')),
+    h('span.value', st.state === 'ready' ? t('update.chipReady', { v: st.available }) : t('update.chipDownloading', { p: st.progress || 0 }))));
+  updateChip.onclick = () => {
+    const install = can('settings.edit') && st.state === 'ready' ? h('button.btn.primary.sm', { type: 'button', onclick: async () => {
+      closePopover();
+      try { await call('update.install'); toast(t('help.installing')); } catch (err) { toastError(err); }
+    } }, t('help.install')) : null;
+    popover(updateChip, h('div.stack.tight', { style: { padding: '8px 10px' } },
+      h('strong', st.state === 'ready' ? t('update.readyTitle', { v: st.available }) : t('update.downloadingTitle', { v: st.available || '' })),
+      h('p.small.muted', st.state === 'ready' ? (install ? t('update.readyManager') : t('update.readyStaff')) : t('update.downloadingText')),
+      h('div.row', install, h('a.btn.sm', { href: '#/help', onclick: () => closePopover() }, t('nav.help')))), { width: 340, align: 'right' });
+  };
 }
 
 export function openNotifications() {
@@ -136,9 +160,11 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   const bell = h('button.btn.ghost.icon-only', { type: 'button', 'aria-label': t('shell.notifications'), id: 'bell', style: { position: 'relative' } }, icon('bell'));
   bellEl = bell;
   bell.addEventListener('click', () => showNotifications(bell));
+  updateChip = h('button.top-chip', { type: 'button', id: 'update-chip', hidden: true, 'aria-label': t('update.chipLabel') });
   refreshBell();
+  refreshUpdate();
   clearInterval(bellTimer);
-  bellTimer = setInterval(() => { if (document.body.contains(bell)) refreshBell(); else clearInterval(bellTimer); }, 60000);
+  bellTimer = setInterval(() => { if (document.body.contains(bell)) { refreshBell(); refreshUpdate(); } else clearInterval(bellTimer); }, 60000);
 
   const userChip = h('button.top-chip', { type: 'button', 'aria-label': t('shell.profile') },
     h('span.avatar', initials(me.user.fullName)),
@@ -159,7 +185,7 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   const topbar = h('header.topbar',
     h('div.brand', h('img', { src: 'assets/mediescare-icon.svg', alt: '' }), h('span.brand-name', t('app.name')), h('span.spacer'), toggleNav),
     searchBtn, h('div.spacer'),
-    branchChip, h('span.top-divider'), syncChip, backupChip, h('span.top-divider'), bell, userChip, signOutBtn);
+    branchChip, h('span.top-divider'), syncChip, backupChip, updateChip, h('span.top-divider'), bell, userChip, signOutBtn);
 
   navEl = h('nav.sidebar', { 'aria-label': 'Main menu' });
   mainEl = h('main.main', { id: 'main', tabindex: '-1' });

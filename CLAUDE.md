@@ -378,6 +378,20 @@ permissions of the user profile; optional encryption with a key held in `safeSto
   docs/SYSTEM-MANUAL.md (stack, hosting, database, data model, sync, gateway, security, config, build, tests,
   performance, runbook, operations, extending, risks).
 
+## Release and updates (2026-10-22)
+
+- Owner's cloud is live: gateway https://mediescare-gateway.mediescare.workers.dev (Cloudflare Workers free) in front of
+  Turso. The setup key is given to builds through MEDIESCARE_CLOUD_SETUP_KEY (never committed).
+- Releases live in https://github.com/ThemedEdits/mediescare-new (public). Version 1.0.0 is the first release.
+- release.js publishes releaseType "release" (drafts are invisible to installed copies) and refuses to publish without
+  the cloud URL and setup key. package.json has "repository" and build.publish = null (set by release.js flags).
+- Updates: updater.js checks every hour, silent install on Restart and update (quitAndInstall(true, true)), an Update
+  chip in the top bar (shell.js refreshUpdate, polled with the bell every 60 s).
+- `npm run ship` (scripts/ship.js): clean tree required, backend tests, npm version, push with the tag.
+  .github/workflows/release.yml builds and publishes on tag v*; it needs repository secrets MEDIESCARE_CLOUD_URL and
+  MEDIESCARE_CLOUD_SETUP_KEY (only an admin of the repository can add them) and skips a tag that is already published.
+- Docs added: README.md, docs/INSTALL.md (end users), docs/RELEASING.md, docs/TESTING-CHECKLIST.md (multi-PC test).
+
 ## Open items carried forward
 
 - **Needs the owner:** Turso URL and token (run `npm run gateway:check`), a place to run the gateway (Cloudflare
@@ -390,8 +404,8 @@ permissions of the user profile; optional encryption with a key held in `safeSto
   snapshot-based join for new computers first.
 - Cloudflare free-plan fit is from local CPU measurement; check Workers metrics (CPU time) after the first real sync.
   Free plan: 100,000 requests a day (about 10-15 branches at the 30 s interval).
-- Auto-update not tested end to end: it needs a GitHub repository for releases (owner to provide) and two published
-  versions. The installer is not code-signed (Windows SmartScreen will warn until a signing certificate is used).
+- Auto-update: detection and download were checked against the real GitHub release (see the release report); the
+  silent install was not run on this development computer. The installer is not code-signed (Windows SmartScreen will warn until a signing certificate is used).
 - Not tested with real hardware: receipt and label printers, silent printing, the Windows print dialog, cash drawer,
   a second screen for the customer display, barcode scanners (keyboard-wedge Enter is simulated in tests only).
 - FBR POS integration not built; sales carry fbr_invoice_no / fbr_status columns so it can be added later.

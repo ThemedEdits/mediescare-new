@@ -8,7 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const log = require('./core/log');
 
-const CHECK_EVERY_MS = 6 * 3600 * 1000;
+// GitHub's release feed has no strict rate limit for this, so an hourly check is fine.
+const CHECK_EVERY_MS = 3600 * 1000;
 
 class Updater {
   constructor({ electronApp, core }) {
@@ -62,7 +63,8 @@ class Updater {
   async install() {
     if (!this.au || this.state.state !== 'ready') return false;
     try { await require('./backup').create(this.core, 'safety'); } catch (err) { log.error('Backup before update failed', err && err.message); }
-    setImmediate(() => this.au.quitAndInstall(false, true));
+    // Silent install (no installer wizard), then Mediescare opens again on the new version.
+    setImmediate(() => this.au.quitAndInstall(true, true));
     return true;
   }
 }
