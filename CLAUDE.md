@@ -383,8 +383,10 @@ permissions of the user profile; optional encryption with a key held in `safeSto
 - Owner's cloud is live: gateway https://mediescare-gateway.mediescare.workers.dev (Cloudflare Workers free) in front of
   Turso. The setup key is given to builds through MEDIESCARE_CLOUD_SETUP_KEY (never committed).
 - Releases live in https://github.com/ThemedEdits/mediescare-new (public). Version 1.0.0 is the first release.
-- release.js publishes releaseType "release" (drafts are invisible to installed copies) and refuses to publish without
-  the cloud URL and setup key. package.json build.publish is the single publisher (github ThemedEdits/mediescare-new, releaseType release); passing extra -c.publish flags once created two publishers and a half-uploaded release. release.js always blanks build-config.json, even on failure.
+- release.js uploads into a draft (build.publish releaseType draft; uploading straight into a published release raced
+  between the installer and blockmap uploads and left latest.yml out), checks the installer, blockmap and latest.yml
+  are there, then publishes the draft via the API (drafts are invisible to installed copies). It refuses to publish
+  without the cloud URL and setup key. package.json build.publish is the single publisher (github ThemedEdits/mediescare-new). release.js always blanks build-config.json, even on failure.
 - Updates: updater.js checks every hour, silent install on Restart and update (quitAndInstall(true, true)), an Update
   chip in the top bar (shell.js refreshUpdate, polled with the bell every 60 s).
 - `npm run ship` (scripts/ship.js): clean tree required, backend tests, npm version, push with the tag.

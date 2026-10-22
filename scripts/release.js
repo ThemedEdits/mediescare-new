@@ -6,7 +6,9 @@
 // Settings come from environment variables and are built into the app (src/main/build-config.json):
 //   MEDIESCARE_CLOUD_URL, MEDIESCARE_CLOUD_SETUP_KEY   the cloud gateway (optional; without it cloud sync shows "not set up")
 //   GH_TOKEN                                           a GitHub token that may create releases (npm run release only)
-// The release repository is fixed in package.json (build.publish: ThemedEdits/mediescare-new, published releases).
+// The release repository is fixed in package.json (build.publish: ThemedEdits/mediescare-new). electron-builder uploads
+// every file into a draft release (uploading straight into a published release races and can leave latest.yml out);
+// once all files are there, this script publishes the draft, which is when installed copies start to see it.
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -18,7 +20,27 @@ const env = process.env;
 function run(cmd, args, { exitOnFail = true } = {}) {
   const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
   const status = r.status === null ? 1 : r.status;
-  if (status !== 0 && exitOnFail) process.exit(status);
+  if (status !== 0 && exitOnFail) if (status !== 0 || !publish) process.exit(status);
+
+// Publish the draft for this version once its files (installer, blockmap, latest.yml) are all uploaded.
+(async () => {
+  const { owner, repo } = require(path.join(root, 'package.json')).build.publish[0];
+  const version = require(path.join(root, 'package.json')).version;
+  const api = (url, opts = {}) => fetch(`https://api.github.com/repos/${owner}/${repo}${url}`, {
+    ...opts, headers: { authorization: `Bearer ${env.GH_TOKEN}`, accept: 'application/vnd.github+json', 'content-type': 'application/json', ...(opts.headers || {}) },
+  });
+  const list = await (await api('/releases?per_page=30')).json();
+  const draft = Array.isArray(list) && list.find((r) => r.tag_name === `v${version}`);
+  if (!draft) { console.error(`No release v${version} found to publish.`); process.exit(1); }
+  const names = draft.assets.map((a) => a.name);
+  const needed = [`Mediescare-Setup-${version}.exe`, `Mediescare-Setup-${version}.exe.blockmap`, 'latest.yml'];
+  const missing = needed.filter((n) => !names.includes(n));
+  if (missing.length) { console.error(`Release v${version} is missing ${missing.join(', ')}; it stays a draft.`); process.exit(1); }
+  if (!draft.draft) { console.log(`Release v${version} is already published.`); return; }
+  const res = await api(`/releases/${draft.id}`, { method: 'PATCH', body: JSON.stringify({ draft: false, make_latest: 'true', tag_name: `v${version}` }) });
+  if (!res.ok) { console.error(`Publishing the release failed: ${res.status} ${await res.text()}`); process.exit(1); }
+  console.log(`Release v${version} published: https://github.com/${owner}/${repo}/releases/tag/v${version}`);
+})().catch((err) => { console.error('Publishing the release failed:', err.message); process.exit(1); });
   return status;
 }
 
