@@ -30,6 +30,7 @@ class Updater {
     this.au = autoUpdater;
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.disableWebInstaller = true; // we ship the full installer, not a web installer
     autoUpdater.logger = { info: (m) => log.info(`update: ${m}`), warn: (m) => log.info(`update: ${m}`), error: (m) => log.error(`update: ${m}`), debug: () => {} };
     autoUpdater.on('checking-for-update', () => this.set({ state: 'checking', error: null }));
     autoUpdater.on('update-not-available', () => this.set({ state: 'up_to_date', checkedAt: new Date().toISOString() }));
