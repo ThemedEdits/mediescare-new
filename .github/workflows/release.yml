@@ -1,0 +1,75 @@
+# Builds the Windows installer and publishes it as a GitHub Release when a version tag (v1.2.3) is pushed.
+# Installed copies of Mediescare check this repository's releases and offer the update (top bar, Help and updates).
+#
+# One-time setup by the repository owner (Settings > Secrets and variables > Actions > New repository secret):
+#   MEDIESCARE_CLOUD_URL         the cloud gateway address, for example https://mediescare-gateway.<account>.workers.dev
+#   MEDIESCARE_CLOUD_SETUP_KEY   the same SETUP_KEY that was set on the gateway with wrangler
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A release that was already published (for example from a developer's computer) is left alone.
+      - name: Skip if this version is already released
+        id: already
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft' 2>/dev/null | grep -q false; then
+            echo "Release $GITHUB_REF_NAME is already published; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.already.outputs.skip != 'true'
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        if: steps.already.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Check the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v') && steps.already.outputs.skip != 'true'
+        shell: bash
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then echo "Tag $GITHUB_REF_NAME does not match package.json version $v"; exit 1; fi
+
+      - name: Check the cloud settings are present
+        if: steps.already.outputs.skip != 'true'
+        shell: bash
+        env:
+          MEDIESCARE_CLOUD_URL: ${{ secrets.MEDIESCARE_CLOUD_URL }}
+          MEDIESCARE_CLOUD_SETUP_KEY: ${{ secrets.MEDIESCARE_CLOUD_SETUP_KEY }}
+        run: |
+          if [ -z "$MEDIESCARE_CLOUD_URL" ] || [ -z "$MEDIESCARE_CLOUD_SETUP_KEY" ]; then
+            echo "Add the repository secrets MEDIESCARE_CLOUD_URL and MEDIESCARE_CLOUD_SETUP_KEY (see docs/RELEASING.md)."
+            exit 1
+          fi
+
+      - name: Backend tests
+        if: steps.already.outputs.skip != 'true'
+        run: npm test
+
+      - name: Build and publish the installer
+        if: steps.already.outputs.skip != 'true'
+        run: npm run release
+        env:
+          MEDIESCARE_CLOUD_URL: ${{ secrets.MEDIESCARE_CLOUD_URL }}
+          MEDIESCARE_CLOUD_SETUP_KEY: ${{ secrets.MEDIESCARE_CLOUD_SETUP_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

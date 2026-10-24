@@ -1701,4 +1701,16 @@ export default {
   'devices.recoveryNew': 'Make a new recovery key',
   'devices.recoveryNewTitle': 'Make a new recovery key?',
   'devices.recoveryNewText': 'The old key stops working as soon as this computer syncs. Write the new key down; it is shown only once.',
+<<<<<<< HEAD
+=======
+  // Update chip in the top bar
+  'update.chipLabel': 'Update',
+  'update.chipReady': 'Version {v} ready',
+  'update.chipDownloading': 'Downloading {p}%',
+  'update.readyTitle': 'Version {v} is ready',
+  'update.downloadingTitle': 'Downloading version {v}',
+  'update.downloadingText': 'A new version is downloading in the background. You can keep working.',
+  'update.readyManager': 'Finish the bill on the counter, then restart. A safety backup is made first and your data stays as it is. Otherwise it installs the next time Mediescare is closed.',
+  'update.readyStaff': 'It installs by itself the next time Mediescare is closed and opened again. Your data stays as it is.',
+>>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 };

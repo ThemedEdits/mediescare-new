@@ -423,3 +423,7 @@ table.data td.num, table.data th.num { white-space: nowrap; }
 .help-doc .help-table td { height: auto; padding: 6px 12px; }
 .help-doc .help-hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
 .help-doc .help-link { cursor: pointer; }
+<<<<<<< HEAD
+=======
+.top-chip.update-ready { border-color: var(--accent); color: var(--accent); }
+>>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
