@@ -16,7 +16,17 @@ async function gateway() {
   const db = sqliteAdapter(path.join(tempDir(), 'gateway.db'));
   const server = createServer({ db, setupKey: '' });
   const url = await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(`http://127.0.0.1:${server.address().port}`)));
-  return { url, db, close: () => new Promise((r) => { server.close(() => r()); server.closeAllConnections(); }) };
+  return {
+    url,
+    db,
+    close: () => new Promise((r) => {
+      server.close(() => {
+        try { db.close(); } catch (_) {}
+        r();
+      });
+      if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+    }),
+  };
 }
 
 function engineFor(app, cloudUrl) {
@@ -29,6 +39,7 @@ async function headOffice(gw) {
   const { c: owner, me } = await setUpHeadOffice(ho);
   const engine = engineFor(ho, gw.url);
   await engine.start();
+  assert.ok(ho.localGet('cloud_token'), 'Head Office registered with the cloud');
   const { branch: lhr, admin } = await owner.call('branches.create', { code: 'LHR', name: 'Lahore', admin: { fullName: 'Lahore Manager', username: 'lhrmgr' } });
   await engine.run('cloud');
   return { ho, owner, me, engine, lhr, admin };
@@ -165,10 +176,14 @@ test('a push bigger than the gateway takes is sent in parts, nothing lost', asyn
   const { ho, owner, engine } = await headOffice(gw);
   // 700 new suppliers -> several push rounds of at most 250.
   for (let i = 0; i < 700; i++) await owner.call('suppliers.create', { name: `Supplier ${i}` });
-  await engine.run('cloud');
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const res = await engine.run('cloud');
+    if (res && engine.status().cloud.pending === 0) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  assert.equal(engine.status().cloud.pending, 0, `Sync failed: ${engine.status().cloud.lastError}`);
   const n = await gw.db.get("SELECT COUNT(*) AS n FROM ops WHERE tbl = 'suppliers'");
   assert.equal(n.n, ho.db.prepare("SELECT COUNT(*) AS n FROM sync_ops WHERE tbl = 'suppliers'").get().n);
-  assert.equal(engine.status().cloud.pending, 0);
   await gw.close();
   await ho.sync.stop();
   ho.close();

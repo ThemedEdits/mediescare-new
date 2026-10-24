@@ -16,13 +16,20 @@ function makeDb() {
 function createServer({ db, setupKey } = {}) {
   const env = { db: db || makeDb(), SETUP_KEY: setupKey !== undefined ? setupKey : process.env.SETUP_KEY };
   return http.createServer(async (req, res) => {
-    const chunks = [];
-    for await (const c of req) chunks.push(c);
-    const body = chunks.length ? Buffer.concat(chunks) : undefined;
-    const request = new Request(`http://${req.headers.host || 'localhost'}${req.url}`, { method: req.method, headers: req.headers, body: req.method === 'GET' ? undefined : body });
-    const response = await handle(request, env);
-    res.writeHead(response.status, Object.fromEntries(response.headers));
-    res.end(Buffer.from(await response.arrayBuffer()));
+    try {
+      const chunks = [];
+      for await (const c of req) chunks.push(c);
+      const body = chunks.length ? Buffer.concat(chunks) : undefined;
+      const request = new Request(`http://${req.headers.host || 'localhost'}${req.url}`, { method: req.method, headers: req.headers, body: req.method === 'GET' ? undefined : body });
+      const response = await handle(request, env);
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      res.end(Buffer.from(await response.arrayBuffer()));
+    } catch (err) {
+      if (!res.headersSent) {
+        res.writeHead(500, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message, code: 'SERVER_ERROR' }));
+      }
+    }
   });
 }
 
