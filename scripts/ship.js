@@ -30,7 +30,7 @@ if (dirty) {
 }
 console.log('Running the backend tests before shipping...');
 run('npm', ['test']);
-run('npm', ['version', level, '-m', 'Release v%s']);
+run('npm', ['version', level, '-m', '"Release v%s"']);
 const version = require(path.join(root, 'package.json')).version;
 run('git', ['push', '--follow-tags', 'origin', 'HEAD']);
 console.log(`\nv${version} pushed. GitHub Actions now builds the installer and publishes the release:`);
