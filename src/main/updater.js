@@ -8,12 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const log = require('./core/log');
 
-<<<<<<< HEAD
-const CHECK_EVERY_MS = 6 * 3600 * 1000;
-=======
 // GitHub's release feed has no strict rate limit for this, so an hourly check is fine.
 const CHECK_EVERY_MS = 3600 * 1000;
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 
 class Updater {
   constructor({ electronApp, core }) {
@@ -34,10 +30,7 @@ class Updater {
     this.au = autoUpdater;
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
-<<<<<<< HEAD
-=======
     autoUpdater.disableWebInstaller = true; // we ship the full installer, not a web installer
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
     autoUpdater.logger = { info: (m) => log.info(`update: ${m}`), warn: (m) => log.info(`update: ${m}`), error: (m) => log.error(`update: ${m}`), debug: () => {} };
     autoUpdater.on('checking-for-update', () => this.set({ state: 'checking', error: null }));
     autoUpdater.on('update-not-available', () => this.set({ state: 'up_to_date', checkedAt: new Date().toISOString() }));
@@ -71,12 +64,8 @@ class Updater {
   async install() {
     if (!this.au || this.state.state !== 'ready') return false;
     try { await require('./backup').create(this.core, 'safety'); } catch (err) { log.error('Backup before update failed', err && err.message); }
-<<<<<<< HEAD
-    setImmediate(() => this.au.quitAndInstall(false, true));
-=======
     // Silent install (no installer wizard), then Mediescare opens again on the new version.
     setImmediate(() => this.au.quitAndInstall(true, true));
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
     return true;
   }
 }

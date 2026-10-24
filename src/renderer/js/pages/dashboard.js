@@ -15,7 +15,13 @@ const go = (navigate, path, params) => () => navigate(path, params);
 function tile({ label, value, sub, onClick, tone, iconName }) {
   const tag = onClick ? 'button.stat' : 'div.stat';
   return h(tag, { type: onClick ? 'button' : null, class: tone || '', onclick: onClick || null },
-    h('span.stat-label', iconName ? icon(iconName, 'sm') : null, label), h('span.stat-value', value), sub ? h('span.stat-sub', sub) : null);
+    h('div.stat-header',
+      h('span.stat-label', label),
+      iconName ? h('span.stat-icon', icon(iconName, 'sm')) : null
+    ),
+    h('span.stat-value', value),
+    sub ? h('span.stat-sub', sub) : null
+  );
 }
 
 function shortDay(iso) {
@@ -45,27 +51,36 @@ export async function render(page, { params, navigate }) {
     const sales = (extra) => (own && can('sales.view') ? go(navigate, 'sales', { ...day, ...extra }) : null);
     const journal = (kind) => (own && can('finance.view') ? go(navigate, 'finance', { ...day, kind }) : null);
     const diff = today.net - d.yesterday.net;
-    const tiles = [
-      tile({ label: t('dash.salesToday'), value: fmt.money(today.net), sub: t('dash.vsYesterday', { v: `${diff >= 0 ? '+' : ''}${fmt.money(diff)}` }), onClick: sales({}), iconName: 'receipt' }),
-      tile({ label: t('dash.bills'), value: String(today.bills), sub: t('dash.average', { v: fmt.money(today.average) }), onClick: sales({}) }),
-      tile({ label: t('dash.cash'), value: fmt.money(today.cash), onClick: sales({ method: 'cash' }) }),
-      tile({ label: t('dash.card'), value: fmt.money(today.card), onClick: sales({ method: 'card' }) }),
-      tile({ label: t('dash.online'), value: fmt.money(today.online), sub: t('dash.onlineSub'), onClick: journal('sale') }),
-      tile({ label: t('dash.credit'), value: fmt.money(today.credit), onClick: sales({ method: 'credit' }) }),
-      tile({ label: t('dash.collections'), value: fmt.money(today.collections.total), sub: t('dash.count', { n: today.collections.count }), onClick: journal('receipt') }),
-      tile({ label: t('dash.returns'), value: fmt.money(today.returns.total), sub: t('dash.count', { n: today.returns.count }), onClick: journal('sale_return'), tone: today.returns.total ? 'warn' : '' }),
-      tile({ label: t('dash.expenses'), value: fmt.money(today.expenses.total), sub: t('dash.count', { n: today.expenses.count }), onClick: own && can('expenses.view') ? go(navigate, 'expenses', day) : null }),
-      today.profit !== null ? tile({ label: t('dash.profit'), value: fmt.money(today.profit), onClick: can('reports.financial') ? go(navigate, 'report', { key: 'gross_profit', ...day }) : null }) : null,
+    // Category 1: Today's Financial Overview (highlighted Net Sales in bluish, Net Profit in greenish)
+    const financialTiles = [
+      tile({ label: t('dash.salesToday'), value: fmt.money(today.net), sub: t('dash.vsYesterday', { v: `${diff >= 0 ? '+' : ''}${fmt.money(diff)}` }), onClick: sales({}), iconName: 'receipt', tone: 'blue' }),
+      today.profit !== null ? tile({ label: t('dash.profit'), value: fmt.money(today.profit), onClick: can('reports.financial') ? go(navigate, 'report', { key: 'gross_profit', ...day }) : null, iconName: 'shield', tone: 'green' }) : null,
+      tile({ label: t('dash.bills'), value: String(today.bills), sub: t('dash.average', { v: fmt.money(today.average) }), onClick: sales({}), iconName: 'clipboard' }),
+      tile({ label: t('dash.expenses'), value: fmt.money(today.expenses.total), sub: t('dash.count', { n: today.expenses.count }), onClick: own && can('expenses.view') ? go(navigate, 'expenses', day) : null, iconName: 'wallet' }),
     ].filter(Boolean);
-    const attention = [
+
+    // Category 2: Payments & Cashflow
+    const paymentTiles = [
+      tile({ label: t('dash.cashSales'), value: fmt.money(today.cash), onClick: sales({ method: 'cash' }), iconName: 'wallet' }),
+      tile({ label: t('dash.cardOnline'), value: fmt.money(today.card + today.online), sub: t('dash.onlineSub'), onClick: sales({}), iconName: 'monitor' }),
+      tile({ label: t('dash.collections'), value: fmt.money(today.collections.total), sub: t('dash.count', { n: today.collections.count }), onClick: journal('receipt'), iconName: 'users' }),
+      tile({ label: t('dash.returns'), value: fmt.money(today.returns.total), sub: t('dash.count', { n: today.returns.count }), onClick: journal('sale_return'), tone: today.returns.total ? 'warn' : '', iconName: 'refresh' }),
+    ].filter(Boolean);
+
+    // Category 3: Inventory Alerts
+    const inventoryTiles = [
       tile({ label: t('dash.lowStock'), value: String(d.stock.low + d.stock.out), sub: t('dash.outOfStock', { n: d.stock.out }), tone: d.stock.out ? 'bad' : d.stock.low ? 'warn' : '', onClick: own ? go(navigate, 'reorder') : null, iconName: 'box' }),
       tile({ label: t('dash.nearExpiry'), value: String(d.expiry.near), sub: t('dash.withinDays', { n: d.expiry.nearDays }), tone: d.expiry.near ? 'warn' : '', onClick: own ? go(navigate, 'batches', { status: 'near' }) : null, iconName: 'layers' }),
-      tile({ label: t('dash.expired'), value: String(d.expiry.expired), sub: t('dash.expiredSub'), tone: d.expiry.expired ? 'bad' : '', onClick: own ? go(navigate, 'batches', { status: 'expired' }) : null }),
-      d.balances ? tile({ label: t('dash.receivable'), value: fmt.money(d.balances.receivable), sub: d.overdueCustomers.n ? t('dash.overdueBills', { n: d.overdueCustomers.n }) : t('dash.noneOverdue'),
-        tone: d.overdueCustomers.n ? 'warn' : '', onClick: go(navigate, 'report', { key: 'receivables', branchId }) }) : null,
-      d.balances ? tile({ label: t('dash.payable'), value: fmt.money(d.balances.payable), sub: d.overdueSuppliers.n ? t('dash.overdueBills', { n: d.overdueSuppliers.n }) : t('dash.noneOverdue'),
-        tone: d.overdueSuppliers.n ? 'warn' : '', onClick: own && can('supplier_payments.view') ? go(navigate, 'payments') : null }) : null,
+      tile({ label: t('dash.expired'), value: String(d.expiry.expired), sub: t('dash.expiredSub'), tone: d.expiry.expired ? 'bad' : '', onClick: own ? go(navigate, 'batches', { status: 'expired' }) : null, iconName: 'trash' }),
+    ].filter(Boolean);
+
+    // Category 4: Balances & Approvals
+    const actionTiles = [
       tile({ label: t('dash.approvals'), value: String(d.pendingApprovals), sub: t('dash.approvalsSub'), tone: d.pendingApprovals ? 'warn' : '', onClick: own && (can('approvals.view') || can('approvals.approve')) ? go(navigate, 'approvals') : null, iconName: 'check' }),
+      d.balances ? tile({ label: t('dash.receivable'), value: fmt.money(d.balances.receivable), sub: d.overdueCustomers.n ? t('dash.overdueBills', { n: d.overdueCustomers.n }) : t('dash.noneOverdue'),
+        tone: d.overdueCustomers.n ? 'warn' : '', onClick: go(navigate, 'report', { key: 'receivables', branchId }), iconName: 'users' }) : null,
+      d.balances ? tile({ label: t('dash.payable'), value: fmt.money(d.balances.payable), sub: d.overdueSuppliers.n ? t('dash.overdueBills', { n: d.overdueSuppliers.n }) : t('dash.noneOverdue'),
+        tone: d.overdueSuppliers.n ? 'warn' : '', onClick: own && can('supplier_payments.view') ? go(navigate, 'payments') : null, iconName: 'truck' }) : null,
     ].filter(Boolean);
 
     const trendPoints = d.trend.map((p) => ({ label: shortDay(p.day), title: fmt.date(p.day), values: [p.net], day: p.day }));
@@ -98,9 +113,11 @@ export async function render(page, { params, navigate }) {
       }));
     }
     mount(body,
-      h('h2.section-title', t('dash.today')), h('div.stat-grid', ...tiles),
-      h('h2.section-title', t('dash.attention')), h('div.stat-grid', ...attention),
-      h('div.grid-2', ...charts));
+      h('div.dash-section', h('h2.section-title', icon('chart', 'sm'), t('dash.financialOverview')), h('div.stat-grid', ...financialTiles)),
+      h('div.dash-section', h('h2.section-title', icon('wallet', 'sm'), t('dash.paymentsCashflow')), h('div.stat-grid', ...paymentTiles)),
+      h('div.dash-section', h('h2.section-title', icon('box', 'sm'), t('dash.inventoryAlerts')), h('div.stat-grid', ...inventoryTiles)),
+      actionTiles.length ? h('div.dash-section', h('h2.section-title', icon('check', 'sm'), t('dash.accountsApprovals')), h('div.stat-grid', ...actionTiles)) : null,
+      h('div.dash-section', h('h2.section-title', icon('chart', 'sm'), t('dash.trend')), h('div.grid-2', ...charts)));
   }
   await load();
 }

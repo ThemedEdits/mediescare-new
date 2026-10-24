@@ -1,11 +1,7 @@
 {
   "name": "mediescare",
   "productName": "Mediescare",
-<<<<<<< HEAD
-  "version": "0.1.0",
-=======
   "version": "1.0.0",
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
   "description": "Offline-first pharmacy POS and management for multi-branch pharmacies",
   "main": "src/main/main.js",
   "private": true,
@@ -21,12 +17,8 @@
     "gateway:check": "node gateway/check.js",
     "icon": "node scripts/run-icon.js",
     "release": "node scripts/release.js --publish",
-<<<<<<< HEAD
-    "migrate": "node scripts/run-node.js scripts/migrate-legacy.js"
-=======
     "migrate": "node scripts/run-node.js scripts/migrate-legacy.js",
     "ship": "node scripts/ship.js"
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
   },
   "devDependencies": {
     "electron": "^33.4.11",
@@ -83,9 +75,6 @@
       "include": "build/installer.nsh",
       "runAfterFinish": true
     },
-<<<<<<< HEAD
-    "publish": null
-=======
     "publish": [
       {
         "provider": "github",
@@ -98,6 +87,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ThemedEdits/mediescare-new.git"
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
   }
 }

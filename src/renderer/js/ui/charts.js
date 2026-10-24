@@ -60,7 +60,7 @@ function yAxis(svg, { left, right, top, bottom, height, max, format }) {
   for (let i = 0; i <= 4; i += 1) {
     const v = (max * i) / 4;
     const y = top + plotH - (plotH * i) / 4;
-    svg.append(s('line', { x1: left, x2: W - right, y1: y, y2: y, stroke: 'var(--chart-grid)', 'stroke-width': 1, 'shape-rendering': 'crispEdges' }));
+    svg.append(s('line', { x1: left, x2: W - right, y1: y, y2: y, stroke: 'var(--chart-grid)', 'stroke-width': 1, 'stroke-dasharray': '4 4' }));
     svg.append(text(left - 6, y + 4, format(v), { 'text-anchor': 'end' }));
   }
 }
@@ -81,9 +81,17 @@ export function lineChart({ points, series, format, axisFormat = compactMoney, h
     const color = `var(--chart-${si + 1})`;
     const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.values[si]).toFixed(1)}`).join(' ');
     if (series.length === 1 && points.length > 1) {
-      svg.append(s('path', { d: `${d} L${x(points.length - 1)},${m.top + plotH} L${x(0)},${m.top + plotH} Z`, fill: color, 'fill-opacity': 0.1, stroke: 'none' }));
+      const gradId = 'chart-grad-' + Math.random().toString(36).slice(2, 8);
+      const defs = s('defs', {},
+        s('linearGradient', { id: gradId, x1: '0', y1: '0', x2: '0', y2: '1' },
+          s('stop', { offset: '0%', 'stop-color': color, 'stop-opacity': '0.24' }),
+          s('stop', { offset: '100%', 'stop-color': color, 'stop-opacity': '0.01' })
+        )
+      );
+      svg.append(defs);
+      svg.append(s('path', { d: `${d} L${x(points.length - 1)},${m.top + plotH} L${x(0)},${m.top + plotH} Z`, fill: `url(#${gradId})`, stroke: 'none' }));
     }
-    svg.append(s('path', { d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    svg.append(s('path', { d, fill: 'none', stroke: color, 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
     const last = points.length - 1;
     if (last >= 0) svg.append(s('circle', { cx: x(last), cy: y(points[last].values[si]), r: 4, fill: color, stroke: 'var(--surface)', 'stroke-width': 2 }));
   });
@@ -128,8 +136,10 @@ export function barChart({ items, format, label, rowH = 30 }) {
     const r = Math.min(4, len / 2, barH / 2);
     const name = it.label.length > 24 ? `${it.label.slice(0, 23)}...` : it.label;
     svg.append(text(left - 8, by + barH / 2 + 4, name, { 'text-anchor': 'end', fill: 'var(--text)' }));
-    if (len > 0) svg.append(s('path', { d: `M${x0},${by} L${x1 - r},${by} Q${x1},${by} ${x1},${by + r} L${x1},${by + barH - r} Q${x1},${by + barH} ${x1 - r},${by + barH} L${x0},${by + barH} Z`, fill: 'var(--chart-1)' }));
-    svg.append(text(x1 + 6, by + barH / 2 + 4, it.valueText || format(it.value)));
+    // Background track for modern bar visualization
+    svg.append(s('rect', { x: left, y: by, width: W - left - right, height: barH, rx: 4, ry: 4, fill: 'var(--surface-2)' }));
+    if (len > 0) svg.append(s('rect', { x: x0, y: by, width: len, height: barH, rx: 4, ry: 4, fill: 'var(--chart-1)' }));
+    svg.append(text(x1 + 8, by + barH / 2 + 4, it.valueText || format(it.value), { 'font-weight': '600' }));
     const hit = s('rect', { x: 0, y, width: W, height: rowH, fill: 'transparent', style: it.onClick ? 'cursor:pointer' : null });
     hit.addEventListener('mousemove', (evt) => f.show(evt, [{ text: it.label }, { text: it.valueText || format(it.value), swatch: 'var(--chart-1)' }, ...(it.sub ? [{ text: it.sub }] : [])]));
     hit.addEventListener('mouseleave', f.hide);

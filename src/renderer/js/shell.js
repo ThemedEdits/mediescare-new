@@ -20,10 +20,7 @@ let statusTimer = null;
 const SYNC_DOT = { synced: 'success', syncing: 'success', offline: 'warning', error: 'danger', not_set_up: '' };
 let renderToken = 0;
 let bellEl = null;
-<<<<<<< HEAD
-=======
 let updateChip = null;
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 let bellTimer = null;
 let notes = { items: [], unread: 0 };
 
@@ -57,8 +54,6 @@ async function showNotifications(anchor) {
   }
 }
 
-<<<<<<< HEAD
-=======
 // The update chip appears in the top bar while a new version downloads or is ready to install. Managers can restart
 // into it at once; everyone else gets it the next time Mediescare is closed and opened.
 async function refreshUpdate() {
@@ -82,7 +77,6 @@ async function refreshUpdate() {
   };
 }
 
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 export function openNotifications() {
   if (bellEl) showNotifications(bellEl);
 }
@@ -166,19 +160,13 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   const bell = h('button.btn.ghost.icon-only', { type: 'button', 'aria-label': t('shell.notifications'), id: 'bell', style: { position: 'relative' } }, icon('bell'));
   bellEl = bell;
   bell.addEventListener('click', () => showNotifications(bell));
-<<<<<<< HEAD
-  refreshBell();
-  clearInterval(bellTimer);
-  bellTimer = setInterval(() => { if (document.body.contains(bell)) refreshBell(); else clearInterval(bellTimer); }, 60000);
-=======
   updateChip = h('button.top-chip', { type: 'button', id: 'update-chip', hidden: true, 'aria-label': t('update.chipLabel') });
   refreshBell();
   refreshUpdate();
   clearInterval(bellTimer);
   bellTimer = setInterval(() => { if (document.body.contains(bell)) { refreshBell(); refreshUpdate(); } else clearInterval(bellTimer); }, 60000);
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 
-  const userChip = h('button.top-chip', { type: 'button', 'aria-label': t('shell.profile') },
+  const userChip = h('button.top-chip.user-chip', { type: 'button', 'aria-label': t('shell.profile') },
     h('span.avatar', initials(me.user.fullName)),
     h('span.two-line', h('span.value', me.user.fullName), h('span.label', me.user.username)),
     h('span.badge', { class: me.user.isSuper ? 'accent' : 'outline' }, me.user.roleName));
@@ -197,11 +185,7 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   const topbar = h('header.topbar',
     h('div.brand', h('img', { src: 'assets/mediescare-icon.svg', alt: '' }), h('span.brand-name', t('app.name')), h('span.spacer'), toggleNav),
     searchBtn, h('div.spacer'),
-<<<<<<< HEAD
-    branchChip, h('span.top-divider'), syncChip, backupChip, h('span.top-divider'), bell, userChip, signOutBtn);
-=======
     branchChip, h('span.top-divider'), syncChip, backupChip, updateChip, h('span.top-divider'), bell, userChip, signOutBtn);
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 
   navEl = h('nav.sidebar', { 'aria-label': 'Main menu' });
   mainEl = h('main.main', { id: 'main', tabindex: '-1' });

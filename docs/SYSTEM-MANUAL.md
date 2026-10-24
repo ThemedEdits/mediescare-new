@@ -414,11 +414,7 @@ written once and never changed.
 |---|---|
 | `MEDIESCARE_CLOUD_URL` | Gateway address, for example `https://mediescare-gateway.<account>.workers.dev`. Empty = cloud sync "not set up". |
 | `MEDIESCARE_CLOUD_SETUP_KEY` | Must equal the gateway's `SETUP_KEY` (if set) for Head Office registration. |
-<<<<<<< HEAD
-| `MEDIESCARE_GH_OWNER`, `MEDIESCARE_GH_REPO`, `GH_TOKEN` | GitHub repository for releases and auto-update (release builds). |
-=======
 | `GH_TOKEN` | GitHub token that may create releases (`npm run release`). The release repository is fixed in package.json build.publish. |
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 
 **App, at run time:**
 
@@ -455,12 +451,8 @@ definitions in `src/main/services/settings.js`).
 | `npm start` | Runs the app from source |
 | `npm run icon` | Draws `build/icon.png` and `build/icon.ico` from the SVG logo |
 | `npm run dist` | Builds `dist/Mediescare-Setup-<version>.exe` (nothing uploaded) |
-<<<<<<< HEAD
-| `npm run release` | Builds and publishes a **draft** GitHub Release (only when the owner asks) |
-=======
 | `npm run release` | Builds and publishes a GitHub Release (published, not draft, so installed copies see it); refuses without the cloud settings |
 | `npm run ship` | Backend tests, version bump (patch/minor/major), commit, tag `vX.Y.Z`, push; the tag starts `.github/workflows/release.yml`, which builds and publishes the release on GitHub Actions (needs the repository secrets `MEDIESCARE_CLOUD_URL` and `MEDIESCARE_CLOUD_SETUP_KEY`) |
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 
 **Installer (electron-builder, `package.json` "build"):**
 - NSIS, x64, assisted installer: "just me" or "all users", choose the folder, desktop and Start menu shortcuts.
@@ -473,14 +465,6 @@ definitions in `src/main/services/settings.js`).
 **Auto-update (`src/main/updater.js`):**
 - Active only when the build has a GitHub repository (`app-update.yml` is present). Otherwise the Help page says
   "not set up".
-<<<<<<< HEAD
-- Checks 30 s after start and every 6 hours, and downloads in the background.
-- Installs on **Restart and update** (Help and updates page, needs `settings.edit`; a safety backup first) or when the
-  app closes.
-- On the next start, pending migrations run, each after its own safety copy.
-
-**Versioning:** bump `version` in `package.json` before a release. Migrations must stay additive; never edit an
-=======
 - Checks 30 s after start and every hour, and downloads in the background. While downloading or ready, an **Update**
   chip shows in the top bar for everyone.
 - Installs silently (no installer wizard) on **Restart and update** (top bar chip or Help and updates page, needs
@@ -491,7 +475,6 @@ definitions in `src/main/services/settings.js`).
 releases without a token). See `docs/RELEASING.md`.
 
 **Versioning:** bump `version` in `package.json` before a release (`npm run ship` does it). Migrations must stay additive; never edit an
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 applied migration.
 
 ---
@@ -548,11 +531,7 @@ Indexes that made this possible are in migration 006 (covering indexes for the l
    set MEDIESCARE_CLOUD_SETUP_KEY=<the same SETUP_KEY>
    npm run dist
    ```
-<<<<<<< HEAD
-   For auto-update, also set `MEDIESCARE_GH_OWNER` / `MEDIESCARE_GH_REPO` (and `GH_TOKEN` for `npm run release`).
-=======
    Auto-update uses the repository in package.json build.publish; `npm run release` also needs `GH_TOKEN`.
->>>>>>> 43427d784b297b7f145f3ca5686e20e71a251b50
 4. **Install at Head Office**, create the organisation, and store the recovery key safely. Head Office registers with
    the gateway automatically.
 5. **For each branch:** add the branch, make a join code (Computers), set up the branch's main computer with it, then

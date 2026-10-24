@@ -525,7 +525,7 @@ export async function render(page, { navigate }) {
     }
     const next = h('button.btn.primary', { type: 'button', autofocus: true, style: { height: '42px' } }, t('pos.nextBill'), h('span.kbd', 'Enter'));
     const m = openModal({
-      title: t('pos.saleDone', { doc: res.docNo }), size: 'narrow',
+      title: t('pos.saleDone', { doc: res.docNo }),
       body: [h('div.pos-done', h('div.small.muted', t('pos.change')), h('div.pos-change', fmt.money(res.change)),
         h('div.small', t('pos.paidTotal', { paid: fmt.money(res.paid), total: fmt.money(res.total) })), res.credit ? h('div.small', { style: { color: 'var(--warning)' } }, t('pos.onAccountAmount', { amount: fmt.money(res.credit) })) : null,
         printed ? h('div.small.muted', t('pos.receiptPrinted')) : null)],
