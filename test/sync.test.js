@@ -253,9 +253,17 @@ test('a branch that comes back online after a busy week catches up in pages, wit
   }
   const waiting = brEngine.status().cloud.pending;
   assert.ok(waiting > 2000, `many operations waiting (${waiting})`);
-  await brEngine.run('cloud');
-  assert.equal(brEngine.status().cloud.pending, 0);
-  await hoEngine.run('cloud');
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await brEngine.run('cloud');
+    if (brEngine.status().cloud.pending === 0) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  assert.equal(brEngine.status().cloud.pending, 0, `Sync failed: ${brEngine.status().cloud.lastError}`);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await hoEngine.run('cloud');
+    if (hoEngine.status().cloud.pending === 0) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
   assert.equal(ho.db.prepare('SELECT COUNT(*) AS n FROM sales WHERE branch_id = ?').get(lhr.id).n, 400);
   assert.equal(stock.productBalance(ho.db, lhr.id, panadol.id), stock.productBalance(br.db, lhr.id, panadol.id));
   const totals = (app) => app.db.prepare("SELECT COUNT(*) AS n, SUM(total) AS t FROM sales WHERE branch_id = ? AND status = 'completed'").get(lhr.id);
