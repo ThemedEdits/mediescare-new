@@ -90,7 +90,7 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   const branch = me.branch;
 
   // Branch chip: switchable for people allowed to work across branches.
-  const branchChip = h('button.top-chip', { type: 'button', 'aria-label': t('shell.branch') },
+  const branchChip = h('button.top-chip.branch-chip', { type: 'button', 'aria-label': t('shell.branch'), title: branch.name },
     icon('building', 'sm'),
     h('span.two-line', h('span.label', t('shell.branch')), h('span.value', branch.name)),
     branch.isHeadOffice ? h('span.badge.accent', t('common.headOffice')) : null,
@@ -118,7 +118,6 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   });
 
   syncChip = h('button.top-chip', { type: 'button', 'aria-label': t('shell.syncTitle'), id: 'sync-chip' });
-  const backupChip = h('button.top-chip', { type: 'button', 'aria-label': t('shell.backupTitle'), id: 'backup-chip' });
   let lastStatus = null;
   syncChip.addEventListener('click', () => {
     const s = lastStatus;
@@ -130,28 +129,15 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
       s && s.clockWarning ? h('p.small', { style: { color: 'var(--danger)' } }, t('sync.clockWarning')) : null,
       can('sync.view') ? h('a.btn.sm', { href: '#/sync', onclick: () => closePopover() }, t('sync.open')) : null), { width: 360 });
   });
-  backupChip.addEventListener('click', () => {
-    const b = lastStatus && lastStatus.backup;
-    popover(backupChip, h('div.stack.tight', { style: { padding: '8px 10px' } },
-      h('strong', b && b.lastAt ? t('backup.lastAt', { when: relative(b.lastAt) }) : t('shell.backupNone')),
-      b && b.external ? h('p.small.muted', t('backup.copiesTo', { folder: b.external })) : h('p.small.muted', t('backup.noExternal')),
-      b && b.stale ? h('p.small', { style: { color: 'var(--danger)' } }, t('backup.staleWarning')) : null,
-      can('backups.view') ? h('a.btn.sm', { href: '#/backups', onclick: () => closePopover() }, t('backup.open')) : null), { width: 340 });
-  });
-  // The top bar shows the live sync and backup state, refreshed every 15 seconds.
+  // The top bar shows the live sync state, refreshed every 15 seconds.
   const paintStatus = (s) => {
     lastStatus = s;
     const worst = ['error', 'offline', 'syncing', 'synced', 'not_set_up'].find((st) => [s.lan.state, s.cloud.state].includes(st)) || 'not_set_up';
     const pendingTotal = (s.lan.pending || 0) + (s.cloud.pending || 0);
     syncChip.replaceChildren(icon(worst === 'synced' || worst === 'syncing' ? 'cloud' : 'cloudOff', 'sm'),
       h('span.two-line', h('span.label', t('shell.syncTitle')), h('span.value', { style: { color: worst === 'error' ? 'var(--danger)' : '' } }, t(`syncState.${worst}`) + (pendingTotal ? ` (${pendingTotal})` : ''))));
-    const b = s.backup;
-    backupChip.replaceChildren(icon('database', 'sm'), h('span.two-line', h('span.label', t('shell.backupTitle')),
-      h('span.value', { style: { color: b.stale ? 'var(--danger)' : '' } }, b.lastAt ? relative(b.lastAt) : t('shell.backupNone'))));
   };
-  for (const [chip, ic, label] of [[syncChip, 'cloud', t('shell.syncTitle')], [backupChip, 'database', t('shell.backupTitle')]]) {
-    chip.replaceChildren(icon(ic, 'sm'), h('span.two-line', h('span.label', label), h('span.value.faint', t('common.loading'))));
-  }
+  syncChip.replaceChildren(icon('cloud', 'sm'), h('span.two-line', h('span.label', t('shell.syncTitle')), h('span.value.faint', t('common.loading'))));
   const refreshStatus = () => call('sync.status').then(paintStatus).catch(() => {});
   refreshStatus();
   clearInterval(statusTimer);
@@ -180,12 +166,16 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   const signOutBtn = h('button.btn.ghost.icon-only', { type: 'button', 'aria-label': t('shell.signOut'), title: t('shell.signOut'), onclick: onSignOut }, icon('logout'));
 
   const searchBtn = h('button.search-trigger', { type: 'button', onclick: openPalette }, icon('search', 'sm'), h('span', t('shell.searchPlaceholder')), h('span.kbd', keyFor('global.search') || 'Ctrl+K'));
-  const toggleNav = h('button.btn.ghost.icon-only', { type: 'button', 'aria-label': t('shell.collapse') }, icon('sidebar'));
+  const toggleNav = h('button.btn.ghost.icon-only.toggle-nav-btn', { type: 'button', 'aria-label': t('shell.collapse') }, icon('sidebar'));
+
+  const actions = h('div.topbar-actions',
+    branchChip, h('span.top-divider'), syncChip, updateChip, h('span.top-divider'), bell, userChip, signOutBtn);
 
   const topbar = h('header.topbar',
-    h('div.brand', h('img', { src: 'assets/mediescare-icon.svg', alt: '' }), h('span.brand-name', t('app.name')), h('span.spacer'), toggleNav),
+    h('div.brand', h('img', { src: 'assets/mediescare-icon.svg', alt: '' }), h('span.brand-name', t('app.name'))),
+    toggleNav,
     searchBtn, h('div.spacer'),
-    branchChip, h('span.top-divider'), syncChip, backupChip, updateChip, h('span.top-divider'), bell, userChip, signOutBtn);
+    actions);
 
   navEl = h('nav.sidebar', { 'aria-label': 'Main menu' });
   mainEl = h('main.main', { id: 'main', tabindex: '-1' });
