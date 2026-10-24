@@ -1,0 +1,79 @@
+{
+  "name": "mediescare",
+  "productName": "Mediescare",
+  "version": "0.1.0",
+  "description": "Offline-first pharmacy POS and management for multi-branch pharmacies",
+  "main": "src/main/main.js",
+  "private": true,
+  "author": "Mediescare",
+  "scripts": {
+    "start": "node scripts/start.js",
+    "postinstall": "node scripts/fetch-native.js",
+    "test": "node scripts/run-tests.js",
+    "test:ui": "node scripts/run-ui.js",
+    "test:perf": "node scripts/run-node.js scripts/perf.js",
+    "dist": "node scripts/release.js",
+    "gateway": "node gateway/server.js",
+    "gateway:check": "node gateway/check.js",
+    "icon": "node scripts/run-icon.js",
+    "release": "node scripts/release.js --publish",
+    "migrate": "node scripts/run-node.js scripts/migrate-legacy.js"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "electron-updater": "^6.6.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "build": {
+    "appId": "pk.mediescare.app",
+    "productName": "Mediescare",
+    "copyright": "Mediescare",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "build/icon.png",
+      "mediescare-icons/**/*",
+      "package.json",
+      "!**/*.map",
+      "docs/*.md"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ],
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Mediescare-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mediescare",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "include": "build/installer.nsh",
+      "runAfterFinish": true
+    },
+    "publish": null
+  }
+}

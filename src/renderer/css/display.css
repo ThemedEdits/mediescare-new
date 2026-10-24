@@ -1,0 +1,16 @@
+/* Customer-facing display: large, high contrast, readable from across the counter. */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; background: #ffffff; color: #1c2024; font: 22px/1.4 "Segoe UI", system-ui, Arial, sans-serif; }
+header { display: flex; align-items: center; gap: 14px; padding: 18px 28px; border-bottom: 1px solid #dfe3e7; font-size: 26px; font-weight: 600; }
+header img { width: 44px; height: 44px; }
+main { flex: 1; overflow: hidden; padding: 12px 28px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 10px 0; border-bottom: 1px solid #eef0f2; }
+td.qty { color: #565e66; width: 30%; }
+td.amt { text-align: right; font-variant-numeric: tabular-nums; width: 25%; }
+footer { padding: 18px 28px 26px; border-top: 2px solid #1a78ad; }
+.total { display: flex; justify-content: space-between; align-items: baseline; font-size: 30px; }
+.total strong { font-size: 54px; color: #1a78ad; font-variant-numeric: tabular-nums; }
+.change { text-align: right; font-size: 30px; color: #2c7232; min-height: 1em; }
+#message { color: #565e66; min-height: 1em; }

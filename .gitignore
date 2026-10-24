@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.log
+# The original requirements brief stays private (not pushed).
+PHARMACY-SOFTWARE-PROMPT.md
