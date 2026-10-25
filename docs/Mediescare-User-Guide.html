@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mediescare - Visual User Guide & Operations Manual</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 14mm 12mm 14mm 12mm;
+    @bottom-right {
+      content: counter(page);
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    line-height: 1.5;
+    font-size: 11pt;
+    margin: 0;
+    padding: 0;
+  }
+  .cover {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+    page-break-after: always;
+  }
+  .cover-logo {
+    width: 84px;
+    height: 84px;
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-size: 32pt;
+    font-weight: 800;
+    color: #1a78ad;
+    margin: 0 0 10px 0;
+    letter-spacing: -0.02em;
+  }
+  .cover h2 {
+    font-size: 16pt;
+    font-weight: 500;
+    color: #475569;
+    margin: 0 0 28px 0;
+  }
+  .cover-meta {
+    margin-top: 40px;
+    padding: 16px 28px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 11pt;
+    color: #64748b;
+    display: inline-block;
+  }
+  .cover-badge {
+    background: #e6f2f9;
+    color: #1a78ad;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+  .section-break {
+    page-break-before: always;
+  }
+  h2.section-title {
+    font-size: 18pt;
+    color: #0f172a;
+    border-bottom: 2px solid #1a78ad;
+    padding-bottom: 6px;
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+  p.section-desc {
+    color: #475569;
+    font-size: 11pt;
+    margin-bottom: 22px;
+  }
+  .guide-item {
+    margin-bottom: 26px;
+    page-break-inside: avoid;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    background: #ffffff;
+  }
+  .guide-item h3 {
+    margin-top: 0;
+    font-size: 13pt;
+    color: #1a78ad;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .guide-item p {
+    font-size: 10.5pt;
+    color: #334155;
+    margin: 0 0 14px 0;
+  }
+  .shot-wrap {
+    text-align: center;
+    margin: 12px 0 16px 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    background: #0f172a;
+  }
+  .shot-wrap img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  .controls-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 10pt;
+  }
+  .controls-table th {
+    text-align: left;
+    background: #f1f5f9;
+    padding: 6px 10px;
+    color: #475569;
+    font-weight: 600;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  .controls-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  .controls-table tr:last-child td {
+    border-bottom: none;
+  }
+  .btn-name {
+    font-weight: 600;
+    color: #0f172a;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    white-space: nowrap;
+  }
+  .tag-badge {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 9pt;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+  }
+  .toc {
+    page-break-after: always;
+    padding: 20px 0;
+  }
+  .toc h2 {
+    font-size: 18pt;
+    color: #1a78ad;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+  }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e2e8f0;
+    font-size: 11pt;
+    font-weight: 500;
+    color: #334155;
+  }
+  .toc-item span:first-child {
+    color: #0f172a;
+  }
+</style>
+</head>
+<body>
+
+<!-- Cover Page -->
+<div class="cover">
+  <div class="cover-badge">Official Release v1.0.0</div>
+  <img class="cover-logo" src="guide-screenshots/03-home.png" style="width: 72px; height: 72px; object-fit: contain; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" alt="Mediescare Logo" />
+  <h1>Mediescare Pharmacy</h1>
+  <h2>Visual Operations Manual & Illustrated Feature Guide</h2>
+  <p style="max-width: 540px; color: #64748b; font-size: 11pt; margin-bottom: 30px;">
+    A complete visual walkthrough of every button, navigation screen, and workflow in the Mediescare Offline-First Multi-Branch Pharmacy Management System.
+  </p>
+  <div class="cover-meta">
+    <strong>Audience:</strong> Pharmacy Owners, Store Managers, Pharmacists & Cashiers<br/>
+    <strong>Application Version:</strong> 1.0.0 Production Release<br/>
+    <strong>Published:</strong> October 2026
+  </div>
+</div>
+
+<!-- Table of Contents -->
+<div class="toc">
+  <h2>Contents List</h2>
+  <ul class="toc-list">
+    
+      <li class="toc-item">
+        <span>1. Introduction & System Architecture</span>
+        <span>Section 1</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>2. First-Time Setup & Organization Registration</span>
+        <span>Section 2</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>3. Application Shell, Top Bar & Navigation Menu</span>
+        <span>Section 3</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>4. Point of Sale (POS / The Counter)</span>
+        <span>Section 4</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>5. Sales History & Cashier Shift Management</span>
+        <span>Section 5</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>6. Medicines, Products & Batch Expiry Tracking</span>
+        <span>Section 6</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>7. Purchasing, Suppliers & Goods Received (GRN)</span>
+        <span>Section 7</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>8. Controlled Drugs & Prescription Register</span>
+        <span>Section 8</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>9. Branch Transfers & Shop Network Sync</span>
+        <span>Section 9</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>10. Reports, Accounting & Executive Dashboard</span>
+        <span>Section 10</span>
+      </li>
+    
+      <li class="toc-item">
+        <span>11. Administration, Roles, Printers & Backups</span>
+        <span>Section 11</span>
+      </li>
+    
+  </ul>
+</div>
+
+<!-- Guide Sections -->
+
+  <div class="section-break">
+    <h2 class="section-title">1. Introduction & System Architecture</h2>
+    <p class="section-desc">Mediescare is an offline-first pharmacy management and Point of Sale (POS) system built specifically for multi-branch retail and hospital pharmacies. It guarantees continuous counter selling during internet and power outages through decentralized local SQLite databases, synchronized with an encrypted cloud ledger when online.</p>
+
+    
+      <div class="guide-item">
+        <h3>Core Architecture & Offline Resilience</h3>
+        <p>Every counter and branch maintains its own full local database. Selling, inventory lookups, and receipt printing execute with zero network latency. Changes automatically sync to the Head Office and cloud whenever connectivity is present.</p>
+
+        
+          <div style="margin-bottom: 12px;">
+            <span class="tag-badge">Offline-First</span><span class="tag-badge">SQLite Embedded</span><span class="tag-badge">Cloud Auto-Sync</span><span class="tag-badge">Multi-Branch</span>
+          </div>
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/03-home.png" alt="Core Architecture & Offline Resilience" />
+          </div>
+        
+
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">2. First-Time Setup & Organization Registration</h2>
+    <p class="section-desc">When launched for the first time, Mediescare guides the user through initialization. All standard pharmacy information is pre-filled for effortless onboarding.</p>
+
+    
+      <div class="guide-item">
+        <h3>Setup Choice: Head Office vs Branch</h3>
+        <p>Choose between initializing the primary Head Office computer (creates the central database) or joining an existing branch to a Head Office network.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/01-setup-choice.png" alt="Setup Choice: Head Office vs Branch" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Create a new Head Office</span></td>
+                  <td>Initializes the master pharmacy organization, stores central data, and creates initial Super Admin.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Connect a branch computer</span></td>
+                  <td>Connects this computer to an existing Head Office via a 6-word join code or network discovery.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Pharmacy Organization Details</h3>
+        <p>Pre-fills Mediescare defaults including Drug Sale Licence number, registered address, phone number, and branch identifiers.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/02-setup-step2.png" alt="Pharmacy Organization Details" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Continue / Submit</span></td>
+                  <td>Validates inputs and moves to administrative password setup.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Back</span></td>
+                  <td>Returns to the previous screen without losing entered information.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Secret Recovery Key</h3>
+        <p>Generates a 24-character cryptographic recovery key shown only once. This key allows an owner to recover an entire pharmacy organization or rebuild a primary computer.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/02b-recovery-key.png" alt="Secret Recovery Key" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Confirmation Checkbox</span></td>
+                  <td>Must be checked to confirm the recovery key has been safely written down.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Continue</span></td>
+                  <td>Enables once confirmed to open the main app interface.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">3. Application Shell, Top Bar & Navigation Menu</h2>
+    <p class="section-desc">The workspace layout provides instant access to all operations through an adaptive top bar and a responsive sidebar navigation.</p>
+
+    
+      <div class="guide-item">
+        <h3>Top Bar Controls</h3>
+        <p>The top bar stays accessible across all screens and provides vital live status indicators.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/03-home.png" alt="Top Bar Controls" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Branch Chip</span></td>
+                  <td>Displays active branch name (e.g. Mediescare Head Office). Clicking opens the switch branch dropdown for authorized managers.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Cloud & LAN Sync Chip</span></td>
+                  <td>Real-time sync indicator. Shows Synced (green), Syncing (blue), or Offline (amber). Clicking opens the sync details popover.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Search Trigger (Ctrl+K)</span></td>
+                  <td>Opens the Global Command Palette to search medicines, bills, batches, suppliers, and customers instantly.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Notifications Bell</span></td>
+                  <td>Displays unread system alerts, stock warnings, and expiry alerts with quick links to affected records.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">User Profile Chip</span></td>
+                  <td>Displays user name and role badge. Opens profile settings, keyboard shortcuts guide, and Sign Out action.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Sidebar Collapse Button</span></td>
+                  <td>Collapses the side menu into an icon-only minimal bar to maximize screen space for POS and tables.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Global Command Palette (Ctrl+K)</h3>
+        <p>Universal omnibar to jump anywhere in the system within seconds. Supports keyboard navigation (Up/Down/Enter/Escape).</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/17-palette.png" alt="Global Command Palette (Ctrl+K)" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Search Input</span></td>
+                  <td>Type any medicine name, bill document number, supplier, customer, or page title to filter live results.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Keyboard Shortcut [Enter]</span></td>
+                  <td>Immediately opens the highlighted record or navigates to the selected page.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">4. Point of Sale (POS / The Counter)</h2>
+    <p class="section-desc">High-speed counter interface optimized for barcode scanners and keyboard-only operation. Supports multiple units, instant price lookups, discounts, hold bills, and all payment methods.</p>
+
+    
+      <div class="guide-item">
+        <h3>Opening the Cash Drawer Shift</h3>
+        <p>Every cashier opens a shift before billing to track physical drawer float cash and maintain financial accountability.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/60-pos-open-shift.png" alt="Opening the Cash Drawer Shift" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Opening Float Input</span></td>
+                  <td>Enter initial cash in drawer (e.g. Rs 5,000 for change).</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Open Shift Button</span></td>
+                  <td>Activates billing and prints an shift-open audit slip.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Scanning Items & Managing Cart</h3>
+        <p>Scan barcode or type medicine name. Items are automatically allocated from the earliest expiring batch (FEFO).</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/61-pos-cart.png" alt="Scanning Items & Managing Cart" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Product Search / Scan (Ctrl+Space)</span></td>
+                  <td>Focuses barcode scan box. Type name or scan barcode to add item instantly.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Unit Dropdown (Pack / Strip / Tablet)</span></td>
+                  <td>Switches dispensing unit. Prices and stock deduct accordingly.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Quantity Input</span></td>
+                  <td>Adjusts quantity sold. Automatically alerts if stock is insufficient.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Discount Input (% / Fixed)</span></td>
+                  <td>Applies line-item discount within cashier allowed threshold.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Hold Bill Button</span></td>
+                  <td>Saves current bill in temporary queue so cashier can attend to the next customer.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Resume Bills Button</span></td>
+                  <td>Restores any previously held bill to the counter.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Pay / Tender Button (F12 or Enter)</span></td>
+                  <td>Opens the payment tender modal.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Payment Tender & Customer Credit</h3>
+        <p>Accepts all standard Pakistani and international payment options with automatic change calculation.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/62-pos-pay.png" alt="Payment Tender & Customer Credit" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Cash (F1)</span></td>
+                  <td>Standard cash tender. Shows exact change to return.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Card (F2)</span></td>
+                  <td>Bank POS debit/credit card transaction.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Easypaisa (F3)</span></td>
+                  <td>Direct mobile wallet tender.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">JazzCash (F4)</span></td>
+                  <td>Direct mobile wallet tender.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Credit Account (F5)</span></td>
+                  <td>Posts to customer ledger if within credit limit.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Customer Picker</span></td>
+                  <td>Selects registered customer for loyalty and credit billing.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Complete & Print (Enter)</span></td>
+                  <td>Finalizes transaction, updates stock, and triggers receipt print.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Receipt Preview & Thermal Printing</h3>
+        <p>Clean 80mm or 58mm thermal receipts with pharmacy header, drug details, batch, expiry, tax summary, and custom footer.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/65-receipt-preview.png" alt="Receipt Preview & Thermal Printing" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Print Button</span></td>
+                  <td>Sends raw ESC/POS commands directly to thermal printer.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">New Bill (F2)</span></td>
+                  <td>Clears screen and prepares counter for the next customer.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">5. Sales History & Cashier Shift Management</h2>
+    <p class="section-desc">Audit all past transactions, print duplicate receipts, handle returns/refunds, and reconcile daily cash drawers.</p>
+
+    
+      <div class="guide-item">
+        <h3>Sales & Receipts List</h3>
+        <p>Comprehensive ledger of all completed, held, and cancelled sales with filtering by date, payment method, and cashier.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/64-sales.png" alt="Sales & Receipts List" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">View Details Link</span></td>
+                  <td>Opens full bill with line items, tax, and batch breakdown.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Void / Refund Button</span></td>
+                  <td>Voids sale, restores batches into stock, and records reversal in financial journal.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Reprint Receipt</span></td>
+                  <td>Prints duplicate customer receipt.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Export to Excel / CSV</span></td>
+                  <td>Exports filtered sales ledger for external accounting.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Cashier Shift Reconciliation (X-Report & Z-Report)</h3>
+        <p>Mid-shift audit (X-Report) and end-of-day closing (Z-Report) with cash counting breakdown and over/short variance logging.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/66-shift-x.png" alt="Cashier Shift Reconciliation (X-Report & Z-Report)" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Counted Cash Inputs</span></td>
+                  <td>Enter counts of Rs 5000, 1000, 500, 100, 50, 20, 10 notes.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Print Shift Report</span></td>
+                  <td>Prints thermal summary of cash, digital payments, refunds, and net drawer balance.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Close Shift Button</span></td>
+                  <td>Locks shift and logs any variance with required cashier reason note.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">6. Medicines, Products & Batch Expiry Tracking</h2>
+    <p class="section-desc">Full pharmaceutical product catalog with multi-unit packaging, batch-level FEFO tracking, and automatic reorder alerts.</p>
+
+    
+      <div class="guide-item">
+        <h3>Medicines Catalog</h3>
+        <p>Searchable directory showing stock on hand, pack size, trade price, MRP, and active batches.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/32-product-page.png" alt="Medicines Catalog" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Add Product Button</span></td>
+                  <td>Opens product creation form with generic formulas and unit mappings.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Edit Product Button</span></td>
+                  <td>Updates pricing, barcodes, and categorization.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Stock by Batch Tab</span></td>
+                  <td>Inspects individual batches, expiry dates, and supplier origins.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Why This Stock? Tab</span></td>
+                  <td>Forensic audit trail tracing every single tablet in and out of the branch.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Adding / Editing Product Details</h3>
+        <p>Comprehensive medical product setup supporting multi-level packaging units.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/31-product-form.png" alt="Adding / Editing Product Details" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Brand Name & Generic Input</span></td>
+                  <td>Enables searching by chemical formulation and brand.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Packaging Structure</span></td>
+                  <td>Defines how many strips/tablets are in a pack for seamless fraction selling.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Controlled Drug Checkbox</span></td>
+                  <td>Enforces mandatory patient CNIC and doctor prescription recording on sale.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Save Button</span></td>
+                  <td>Validates and saves product to local catalog and syncs across branches.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Batches and Expiry Tracking</h3>
+        <p>Monitors pharmaceutical expiration timelines. Visual color-coded badges highlight expired (red), near-expiry (yellow), and healthy stock (green).</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/35-batches.png" alt="Batches and Expiry Tracking" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Filter by Expiry Range</span></td>
+                  <td>Filters batches expiring in 30, 60, 90, or 180 days.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Export Expiry Report</span></td>
+                  <td>Generates return list for supplier credit notes before items expire.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Stock Adjustments (Damaged / Breakages)</h3>
+        <p>Adjusts inventory count for broken ampoules, damaged packaging, expired medicines, or physical audit corrections.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/37-adjustment-form.png" alt="Stock Adjustments (Damaged / Breakages)" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Adjustment Reason Dropdown</span></td>
+                  <td>Selects category: Damaged, Expired, Breakage, Physical Count Variance.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Post Adjustment Button</span></td>
+                  <td>Updates batch balances and logs financial write-off.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">7. Purchasing, Suppliers & Goods Received (GRN)</h2>
+    <p class="section-desc">Manage supplier relationships, issue purchase orders, receive incoming stock with batch verification, and settle invoices.</p>
+
+    
+      <div class="guide-item">
+        <h3>Goods Received Note (GRN Editor)</h3>
+        <p>Receives delivery from distributors. Records invoice numbers, batch numbers, expiry dates, bonus units, and distributor discounts.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/33-grn-editor.png" alt="Goods Received Note (GRN Editor)" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Batch No & Expiry Date Inputs</span></td>
+                  <td>Enters exact manufacturer batch details.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Trade Price & MRP Inputs</span></td>
+                  <td>Calculates pharmacy margin and updates product selling prices.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Bonus Units Field</span></td>
+                  <td>Records free promotional schemes (e.g., 10+1 free) without distorting unit cost.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Post GRN Button</span></td>
+                  <td>Increments inventory stock, creates new batch records, and adds payable bill to supplier ledger.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Supplier Invoices & Payment Ledger</h3>
+        <p>Tracks outstanding debts owed to pharmaceutical distributors with due date alerts.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/54-supplier-bills.png" alt="Supplier Invoices & Payment Ledger" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Record Payment Button</span></td>
+                  <td>Applies cash or bank cheque payment against oldest open invoices.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Return to Supplier Button</span></td>
+                  <td>Creates debit note for expired or returned items.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">8. Controlled Drugs & Prescription Register</h2>
+    <p class="section-desc">Maintains statutory legal compliance for scheduled narcotics, sedatives, and prescription-only medications.</p>
+
+    
+      <div class="guide-item">
+        <h3>Controlled Drug Register</h3>
+        <p>Every sale of a controlled medication mandates logging patient identity, prescribing doctor, and clinic details.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/67-controlled.png" alt="Controlled Drug Register" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Patient Name & CNIC Inputs</span></td>
+                  <td>Records identity for regulatory inspection.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Doctor Name & PMDC Reg No</span></td>
+                  <td>Verifies medical prescription validity.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Print Register Report</span></td>
+                  <td>Exports official inspection ledger required by health authorities.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">9. Branch Transfers & Shop Network Sync</h2>
+    <p class="section-desc">Enables multi-branch operations: dispatch medicines from central warehouse to retail outlets, track transit shortages, and sync in real time.</p>
+
+    
+      <div class="guide-item">
+        <h3>Inter-Branch Stock Dispatch & Receipt</h3>
+        <p>Head Office creates a transfer packing list. Branch inspects items upon delivery and records any damaged or short units.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/38-transfer-dispatched.png" alt="Inter-Branch Stock Dispatch & Receipt" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Dispatch Transfer</span></td>
+                  <td>Deducts stock from sender and marks shipment in-transit.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Receive & Confirm</span></td>
+                  <td>Adds items to receiving branch stock and logs any discrepancy notes.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Local Shop Network Pairing (LAN)</h3>
+        <p>Pairs secondary counter computers with the branch main PC via local Wi-Fi / Ethernet without requiring internet access.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/70-sync-pair.png" alt="Local Shop Network Pairing (LAN)" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">6-Digit Pairing Code</span></td>
+                  <td>Connects secondary POS terminals in seconds.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Refresh Connection</span></td>
+                  <td>Verifies active counter communication status.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">10. Reports, Accounting & Executive Dashboard</h2>
+    <p class="section-desc">Business intelligence suite providing live revenue tracking, gross profit analysis, tax summaries, and daily reconciliation.</p>
+
+    
+      <div class="guide-item">
+        <h3>Executive Analytics Dashboard</h3>
+        <p>High-level overview of daily sales volume, gross profit margin, customer count, and low-stock alerts.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/80-dashboard.png" alt="Executive Analytics Dashboard" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Today / Week / Month Toggle</span></td>
+                  <td>Filters performance metrics over selectable time windows.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Branch Selector</span></td>
+                  <td>Consolidates multi-branch performance for pharmacy owners.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Daily Sales & Drawer Reconciliation Report</h3>
+        <p>Itemized sales report with tax breakdowns, cashier totals, payment methods, and profit figures.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/82-report-daily.png" alt="Daily Sales & Drawer Reconciliation Report" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Date Range Filter</span></td>
+                  <td>Selects single day or date range.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Print Report Button</span></td>
+                  <td>Formats report for thermal printer or full-page laser printer.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Export to Excel</span></td>
+                  <td>Downloads structured `.xlsx` spreadsheet.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Financial Journal & Expenses</h3>
+        <p>Automated double-entry general ledger tracking cash in hand, bank accounts, expenses, and accounts payable.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/85-finance.png" alt="Financial Journal & Expenses" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Add Expense Button</span></td>
+                  <td>Records petty cash vouchers, electricity bills, staff lunch, or rent payments.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+  <div class="section-break">
+    <h2 class="section-title">11. Administration, Roles, Printers & Backups</h2>
+    <p class="section-desc">Configure staff permissions, manage system settings, pair thermal receipt printers, and automate daily encrypted backups.</p>
+
+    
+      <div class="guide-item">
+        <h3>Role-Based Permissions Checklist</h3>
+        <p>Granular security controls ensure cashiers, pharmacists, and managers only access features appropriate for their role.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/15-role-editor.png" alt="Role-Based Permissions Checklist" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Permission Checkboxes</span></td>
+                  <td>Toggles specific access (e.g., View Purchase Cost, Void Sales, Edit Products, Apply Discounts).</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Save Role Button</span></td>
+                  <td>Applies updated permissions immediately across all computers.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Thermal Receipt Printer Setup</h3>
+        <p>Configure USB, Serial, or LAN receipt printers with customizable bill headers, logos, and cut commands.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/68-printer.png" alt="Thermal Receipt Printer Setup" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Paper Width (80mm / 58mm)</span></td>
+                  <td>Switches layout width for standard thermal printers.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Test Print Button</span></td>
+                  <td>Sends test diagnostic slip to verify connection and paper alignment.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+      <div class="guide-item">
+        <h3>Automated Encrypted Backups</h3>
+        <p>Mediescare automatically creates daily encrypted SQLite database snapshots to protect against hardware failure.</p>
+
+        
+
+        
+          <div class="shot-wrap">
+            <img src="guide-screenshots/72-backups.png" alt="Automated Encrypted Backups" />
+          </div>
+        
+
+        
+          <table class="controls-table">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Button / Control</th>
+                <th>Function & Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><span class="btn-name">Backup Now Button</span></td>
+                  <td>Creates an instantaneous encrypted backup snapshot.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Copy to USB / External Drive</span></td>
+                  <td>Exports backup offsite for disaster recovery.</td>
+                </tr>
+              
+                <tr>
+                  <td><span class="btn-name">Restore Backup Button</span></td>
+                  <td>Restores a selected historical snapshot with a mandatory safety copy created first.</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        
+      </div>
+    
+  </div>
+
+
+</body>
+</html>

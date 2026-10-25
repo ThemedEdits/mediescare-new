@@ -12,9 +12,9 @@ const { createServer } = require('../gateway/server');
 const { sqliteAdapter } = require('../gateway/src/adapters');
 const joinCodes = require('../src/main/core/joincodes');
 
-async function gateway() {
+async function gateway(setupKey = '') {
   const db = sqliteAdapter(path.join(tempDir(), 'gateway.db'));
-  const server = createServer({ db, setupKey: '' });
+  const server = createServer({ db, setupKey });
   const url = await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(`http://127.0.0.1:${server.address().port}`)));
   return {
     url,
@@ -187,4 +187,57 @@ test('a push bigger than the gateway takes is sent in parts, nothing lost', asyn
   await gw.close();
   await ho.sync.stop();
   ho.close();
+});
+
+test('head office setup requires cloud setup key when cloud is configured and rejects duplicates', async () => {
+  const gw = await gateway('SECRET123');
+  const app1 = makeApp();
+  app1.localSet('cloud_url', gw.url);
+  const c1 = client(app1);
+
+  // Missing setup key
+  let err = await c1.fail('setup.createHeadOffice', {
+    orgName: 'Alpha Pharmacy', orgCode: 'ALPHA', branchName: 'Head Office', branchCode: 'HO',
+    fullName: 'Owner', username: 'owner', password: 'Owner#2026', confirmPassword: 'Owner#2026',
+  });
+  assert.equal(err.code, 'VALIDATION');
+  assert.equal(err.details.field, 'setupKey');
+
+  // Invalid setup key
+  err = await c1.fail('setup.createHeadOffice', {
+    orgName: 'Alpha Pharmacy', orgCode: 'ALPHA', branchName: 'Head Office', branchCode: 'HO',
+    fullName: 'Owner', username: 'owner', password: 'Owner#2026', confirmPassword: 'Owner#2026',
+    setupKey: 'WRONGKEY',
+  });
+  assert.equal(err.code, 'VALIDATION');
+  assert.equal(err.details.field, 'setupKey');
+
+  // Valid setup key succeeds
+  const me = await c1.call('setup.createHeadOffice', {
+    orgName: 'Alpha Pharmacy', orgCode: 'ALPHA', branchName: 'Head Office', branchCode: 'HO',
+    fullName: 'Owner', username: 'owner', password: 'Owner#2026', confirmPassword: 'Owner#2026',
+    setupKey: 'SECRET123',
+  });
+  assert.ok(me.recoveryKey);
+  assert.ok(app1.localGet('cloud_token'));
+
+  // Attempt duplicate Head Office registration from another PC with same orgCode
+  const app2 = makeApp();
+  app2.localSet('cloud_url', gw.url);
+  const c2 = client(app2);
+
+  err = await c2.fail('setup.createHeadOffice', {
+    orgName: 'Alpha Pharmacy Duplicate', orgCode: 'ALPHA', branchName: 'Head Office 2', branchCode: 'HO2',
+    fullName: 'Owner 2', username: 'owner2', password: 'Owner#2026', confirmPassword: 'Owner#2026',
+    setupKey: 'SECRET123',
+  });
+  assert.equal(err.code, 'ORG_EXISTS');
+  assert.match(err.message, /already registered in the cloud/);
+  assert.equal(app2.isSetUp(), false);
+  assert.equal(app2.db.prepare('SELECT COUNT(*) AS n FROM org').get().n, 0);
+
+  await gw.close();
+  if (app1.sync) await app1.sync.stop();
+  app1.close();
+  app2.close();
 });

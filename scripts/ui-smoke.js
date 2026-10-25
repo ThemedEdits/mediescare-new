@@ -12,6 +12,7 @@ fs.mkdirSync(shotsDir, { recursive: true });
 process.env.MEDIESCARE_DATA_DIR = dataDir;
 process.env.MEDIESCARE_HIDDEN = '1';
 process.env.MEDIESCARE_LAN_PORT = '47891'; // not the normal port, so a running copy of the app is not disturbed
+process.env.MEDIESCARE_CLOUD_URL = '';
 delete process.env.ELECTRON_RUN_AS_NODE;
 
 const { app } = require('electron');
@@ -120,7 +121,7 @@ async function run() {
     // Next without the required field shows an inline message instead of moving on.
     await js(`__t.fill('Organisation name', ''); __t.click('button[type=submit]')`);
     await waitFor(`__t.q('.field.has-error')`, 'required error');
-    await js(`__t.fill('Organisation name', 'Shifa Pharmacy'); __t.fill('Organisation code', 'shifa'); __t.click('button[type=submit]')`);
+    await js(`__t.fill('Organisation name', 'Shifa Pharmacy'); __t.fill('Organisation code', 'shifa'); try { __t.fill('Cloud setup key', 'mock-key'); } catch (_) {} __t.click('button[type=submit]')`);
     await waitFor(`__t.fieldByLabel('Head Office name')`);
     await shot('02-setup-step2');
     await js(`__t.fill('Head Office name', 'Shifa Head Office'); __t.fill('Head Office code', 'HO'); __t.fill('Address', 'Main Boulevard, Lahore'); __t.fill('Drug sale licence number', 'DSL-123'); __t.click('button[type=submit]')`);

@@ -81,7 +81,7 @@ async function upload() {
 (async () => {
   if (publish) await checkVersionIsNew();
   const configFile = path.join(root, 'src', 'main', 'build-config.json');
-  fs.writeFileSync(configFile, JSON.stringify({ cloudUrl, cloudSetupKey: env.MEDIESCARE_CLOUD_SETUP_KEY || '' }, null, 2) + '\n');
+  fs.writeFileSync(configFile, JSON.stringify({ cloudUrl, cloudSetupKey: '' }, null, 2) + '\n');
   console.log(`Cloud gateway built in: ${cloudUrl}`);
   let status = 1;
   try {

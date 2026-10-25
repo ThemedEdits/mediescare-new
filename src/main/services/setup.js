@@ -31,12 +31,39 @@ async function createHeadOffice(ctx, params) {
   const password = v.password(params, 'password', SETUP_MIN_PASSWORD);
   if (params.confirmPassword !== password) invalid('confirmPassword', 'auth.passwordMismatch');
   const deviceName = v.text(params, 'deviceName', 'Computer name', { max: 60 }) || os.hostname();
+  const cloudUrl = (app.sync && app.sync.cloudUrl) || app.localGet('cloud_url') || require('../config').cloudUrl || '';
+  const setupKey = v.text(params, 'setupKey', 'Cloud setup key', { max: 200 }) || '';
+  if (cloudUrl && !setupKey) invalid('setupKey', 'setup.setupKeyRequired');
 
   const hash = await hashPassword(password);
   const now = nowIso();
   // The organisation recovery key: shown once to the owner, only its hash is kept (it syncs to the cloud gateway).
   const recoveryKey = joinCodes.generate(joinCodes.RECOVERY_LENGTH);
   const ids = { org: newId(), branch: newId(), device: newId(), user: newId() };
+
+  let cloudToken = null;
+  if (cloudUrl) {
+    const { makePeer, PeerError } = require('../sync/peer');
+    const peer = makePeer({ baseUrl: cloudUrl, fetchImpl: app.fetchImpl });
+    try {
+      const reg = await peer.post('/v1/org/register', {
+        orgId: ids.org,
+        orgCode,
+        orgName,
+        deviceId: ids.device,
+        deviceName,
+        branchId: ids.branch,
+        setupKey,
+      });
+      cloudToken = reg.token;
+    } catch (err) {
+      if (err instanceof PeerError) {
+        if (err.code === 'SETUP_KEY' || err.status === 403) invalid('setupKey', 'setup.setupKeyInvalid');
+        if (err.code === 'ORG_EXISTS' || err.code === 'ORG_CODE_TAKEN' || err.status === 409) fail('ORG_EXISTS', 'setup.orgAlreadyExistsInCloud', { code: orgCode });
+      }
+      fail('CLOUD_ERROR', 'setup.cloudRegistrationFailed', { reason: err.message });
+    }
+  }
 
   db.transaction(() => {
     // The device id must be known before the first insert so every operation records where it came from.
@@ -62,6 +89,11 @@ async function createHeadOffice(ctx, params) {
 
     app.localSet('device_id', ids.device);
     app.localSet('org_id', ids.org);
+    if (cloudToken) {
+      app.localSet('cloud_token', cloudToken);
+      app.localSet('cloud_url', cloudUrl);
+      app.localSet('cloud_setup_key', setupKey);
+    }
     require('./lookups').seedDefaults(db);
 
     const actor = { userId: ids.user, username, branchId: ids.branch, deviceId: ids.device };

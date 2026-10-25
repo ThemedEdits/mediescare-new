@@ -24,6 +24,10 @@ const en = {
   'setup.joinNeedsSync': 'Joining an existing Head Office or branch needs the sync service, which is not set up on this computer yet. Ask your administrator to finish the sync setup, then try again.',
   'setup.codeFormat': 'The code can use only letters and numbers (2 to 6 characters), for example LHR.',
   'setup.orgCodeFormat': 'The organisation code can use only letters and numbers (3 to 12 characters).',
+  'setup.setupKeyRequired': 'Please enter the cloud setup key to register this Head Office with the cloud.',
+  'setup.setupKeyInvalid': 'Invalid cloud setup key. This key is required to register a Head Office on the cloud gateway.',
+  'setup.orgAlreadyExistsInCloud': 'Organisation code "{code}" is already registered in the cloud with an existing Head Office. You cannot create multiple Head Offices for the same organisation. To connect this computer, go back and choose "Connect a branch computer to Head Office".',
+  'setup.cloudRegistrationFailed': 'Could not register Head Office with cloud gateway: {reason}. A working connection to the cloud gateway is required to create a Head Office.',
 
   // Auth
   'auth.badLogin': 'The username or password is not correct.',

@@ -33,6 +33,7 @@ export async function renderSetup(root, { onDone }) {
       licenceNo: 'DL-LHR-2026-MED',
       fullName: 'Mediescare Admin',
       username: 'admin',
+      setupKey: '',
     };
     let step = 0;
     const steps = [
@@ -41,8 +42,11 @@ export async function renderSetup(root, { onDone }) {
         fields: () => [
           form.add('orgName', fieldText(input({ placeholder: t('setup.orgNamePh'), maxlength: 120, value: values.orgName || '' }), t('setup.orgName'), { required: true, span2: true })),
           form.add('orgCode', fieldText(input({ placeholder: t('setup.orgCodePh'), maxlength: 12, value: values.orgCode || '', style: { textTransform: 'uppercase' } }), t('setup.orgCode'), { required: true, hint: t('setup.orgCodeHint'), span2: true })),
+          ...(defaults.hasCloud ? [
+            form.add('setupKey', fieldText(passwordInput({ placeholder: t('setup.setupKeyPh'), maxlength: 200, value: values.setupKey || '' }), t('setup.setupKey'), { required: true, hint: t('setup.setupKeyHint'), span2: true })),
+          ] : []),
         ],
-        names: ['orgName', 'orgCode'],
+        names: ['orgName', 'orgCode', ...(defaults.hasCloud ? ['setupKey'] : [])],
       },
       {
         title: t('setup.step2'),

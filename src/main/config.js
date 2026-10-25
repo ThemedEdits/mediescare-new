@@ -6,8 +6,8 @@ let built = {};
 try { built = require('./build-config.json'); } catch (_) { built = {}; }
 
 module.exports = {
-  cloudUrl: process.env.MEDIESCARE_CLOUD_URL || built.cloudUrl || '',
+  cloudUrl: process.env.MEDIESCARE_CLOUD_URL !== undefined ? process.env.MEDIESCARE_CLOUD_URL : (built.cloudUrl || ''),
   // Optional key the gateway asks for when a new organisation registers (set the same value on the gateway).
-  cloudSetupKey: process.env.MEDIESCARE_CLOUD_SETUP_KEY || built.cloudSetupKey || '',
+  cloudSetupKey: process.env.MEDIESCARE_CLOUD_SETUP_KEY !== undefined ? process.env.MEDIESCARE_CLOUD_SETUP_KEY : (built.cloudSetupKey || ''),
   lanPort: Number(process.env.MEDIESCARE_LAN_PORT) || 47800,
 };

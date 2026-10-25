@@ -14,6 +14,6 @@ const files = fs.readdirSync(path.join(root, 'test'))
 const result = spawnSync(electron, ['--test', '--test-concurrency=1', ...files], {
   cwd: root,
   stdio: 'inherit',
-  env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+  env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MEDIESCARE_CLOUD_URL: '' },
 });
 process.exit(result.status === null ? 1 : result.status);
