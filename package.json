@@ -1,7 +1,7 @@
 {
   "name": "mediescare",
   "productName": "Mediescare",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Offline-first pharmacy POS and management for multi-branch pharmacies",
   "main": "src/main/main.js",
   "private": true,
