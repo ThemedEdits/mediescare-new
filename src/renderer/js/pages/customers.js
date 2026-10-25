@@ -65,7 +65,10 @@ export function customerForm(c, onSaved) {
     try {
       const res = await call(isNew ? 'customers.create' : 'customers.update', isNew ? form.values() : { id: c.id, ...form.values() });
       m.close();
-      toast(t('common.saved'));
+      toast(isNew ? t('customers.createdSuccess', { name: form.value('name') }) : t('customers.updatedSuccess', { name: form.value('name') }), {
+        type: 'success',
+        title: isNew ? t('customers.addedTitle') : t('customers.updatedTitle'),
+      });
       if (onSaved) onSaved(res);
     } catch (err) { form.showError(err); }
   });

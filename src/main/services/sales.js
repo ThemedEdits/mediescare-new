@@ -225,9 +225,28 @@ function receiptHtml(ctx, s, { format, reprint }) {
   const branch = ctx.db.prepare('SELECT * FROM branches WHERE id = ?').get(s.branch_id);
   const org = ctx.db.prepare('SELECT name FROM org LIMIT 1').get();
   const vals = settings.readAll(ctx.db, s.branch_id).values;
+  const dev = deviceSettings(ctx.app);
   return receipt.render({
-    org, branch, sale: detail(ctx, s), format: format || deviceSettings(ctx.app).paper || vals['receipt.paper'],
-    showBatch: vals['receipt.showBatch'], footer: vals['receipt.footer'], taxLabel: vals['tax.label'], reprint,
+    org, branch, sale: detail(ctx, s),
+    format: format || dev.paper || vals['receipt.paper'] || '80',
+    showLogo: dev.showLogo !== false,
+    logoPlacement: dev.logoPlacement || 'center',
+    logoSize: dev.logoSize || 'medium',
+    headerText: dev.headerText || '',
+    headerAlignment: dev.headerAlignment || 'center',
+    headerSize: dev.headerSize || 'normal',
+    showBranchAddress: dev.showBranchAddress !== false,
+    showBranchPhone: dev.showBranchPhone !== false,
+    showBranchLicence: dev.showBranchLicence !== false,
+    showBranchNtn: dev.showBranchNtn !== false,
+    showBatch: dev.showBatchExpiry !== undefined ? dev.showBatchExpiry : vals['receipt.showBatch'],
+    showDiscount: dev.showItemDiscount !== false,
+    showBarcode: dev.showBarcode !== false,
+    footer: dev.footerText || vals['receipt.footer'],
+    footerAlignment: dev.footerAlignment || 'center',
+    footerSize: dev.footerSize || 'normal',
+    copies: dev.copies || 1,
+    taxLabel: vals['tax.label'], reprint,
     currency: { symbol: vals['currency.symbol'], decimals: vals['currency.decimals'] }, dateFormat: vals['date.format'],
   });
 }

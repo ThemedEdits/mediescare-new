@@ -27,7 +27,14 @@ export async function render(page, { params, navigate }) {
       reason = await confirm({ title: t('products.deactivateTitle', { name: p.label }), text: t('products.deactivateText'), confirmLabel: t('products.deactivate'), danger: true, requireReason: true });
       if (reason === false) return;
     }
-    try { await call('products.setActive', { id, active: !p.active, reason }); navigate('product', { id }); } catch (err) { toastError(err); }
+    try {
+      await call('products.setActive', { id, active: !p.active, reason });
+      toast(!p.active ? t('products.activatedSuccess', { name: p.label }) : t('products.deactivatedSuccess', { name: p.label }), {
+        type: 'success',
+        title: !p.active ? t('products.activatedTitle') : t('products.deactivatedTitle'),
+      });
+      navigate('product', { id });
+    } catch (err) { toastError(err); }
   } }, p.active ? t('products.deactivate') : t('products.activate')) : null;
 
   page.append(docHeader({
@@ -76,6 +83,7 @@ export async function render(page, { params, navigate }) {
         p.branchMrp !== null ? [t('product.branchPrice'), fmt.money(p.branchMrp)] : null,
         can('cost.view') ? [t('products.tradePerPack'), fmt.money(p.tradePrice)] : null,
         [t('products.taxRate'), `${(p.taxRateBp / 100).toFixed(2)}%`],
+        [t('products.defaultDiscount'), `${(p.defaultDiscountBp ? p.defaultDiscountBp / 100 : 0).toFixed(1)}%`],
         [t('products.reorderLevel'), p.reorderLevel ? `${p.reorderLevel} ${p.baseUnit}` : t('common.none')],
         [t('products.minStock'), p.minStock || '-'], [t('products.maxStock'), p.maxStock || '-'], [t('product.rack'), p.rack],
       ])))));

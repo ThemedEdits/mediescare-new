@@ -390,7 +390,7 @@ test('a version 1 database upgrades to the new schema with a safety copy first',
   void rebuildTriggers;
   db.close();
   const app = makeApp(dir);
-  assert.deepEqual(app.migration.applied, [2, 3, 4, 5, 6, 7], 'every newer migration runs, in order');
+  assert.deepEqual(app.migration.applied, [2, 3, 4, 5, 6, 7, 8], 'every newer migration runs, in order');
   assert.ok(app.migration.backup && fs.existsSync(app.migration.backup));
   assert.equal(app.db.prepare('SELECT name FROM org').get().name, 'Old Org');
   assert.ok(app.db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'stock_ledger'").get());

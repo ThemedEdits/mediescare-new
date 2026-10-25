@@ -17,7 +17,7 @@ const PULL_BATCH = 300;
 const { LanServer } = require('./lan-server');
 
 const LAN_EVERY_MS = 4000;
-const CLOUD_EVERY_MS = 30000;
+const CLOUD_EVERY_MS = 60000;
 const MAX_BACKOFF_MS = 120000;
 const SKEW_WARN_MS = 2 * 60 * 1000;
 
@@ -29,7 +29,7 @@ class SyncEngine {
   constructor(app, { lanPort = config.lanPort, cloudUrl = config.cloudUrl, fetchImpl, discovery = true, autoStart = true } = {}) {
     this.app = app;
     this.lanPort = lanPort;
-    this.cloudUrl = cloudUrl;
+    this.cloudUrl = this.local('cloud_url') || cloudUrl;
     this.fetchImpl = fetchImpl;
     this.discovery = discovery;
     this.autoStart = autoStart;
@@ -151,27 +151,46 @@ class SyncEngine {
 
   schedule(channel, every) {
     clearTimeout(this.timers[channel]);
+    if (this.stopped) return;
     const backoff = Math.min(every * 2 ** Math.min(this.failures[channel], 5), MAX_BACKOFF_MS);
+    const delay = this.failures[channel] ? backoff : every;
     this.timers[channel] = setTimeout(async () => {
-      await this.run(channel);
-      this.schedule(channel, every);
-    }, this.failures[channel] ? backoff : every);
-    if (this.timers[channel].unref) this.timers[channel].unref();
+      try {
+        await this.run(channel);
+      } catch (err) {
+        log.error('Auto sync error', channel, err && err.message);
+      } finally {
+        if (!this.stopped) this.schedule(channel, every);
+      }
+    }, delay);
+  }
+
+  // Trigger an immediate sync (e.g. after POS sale or goods received), coalescing rapid calls.
+  trigger(channel = 'cloud') {
+    if (this.stopped) return;
+    clearTimeout(this.timers[`${channel}_trigger`]);
+    this.timers[`${channel}_trigger`] = setTimeout(() => {
+      delete this.timers[`${channel}_trigger`];
+      this.run(channel).catch(() => {});
+    }, 1000);
   }
 
   // ---- lifecycle ----
   async start() {
     this.stopped = false;
     if (!this.device) return;
+    const cloudUrl = this.local('cloud_url') || this.cloudUrl;
     if (this.device.kind === 'primary') {
       await this.startServer();
       if (this.cloudPeer()) this.cloud.configured = true;
-      else if (this.cloudUrl && this.device.is_head_office) await this.registerOrg().catch((err) => { this.cloud.lastError = err.message; });
+      else if (cloudUrl && this.device.is_head_office) {
+        await this.registerOrg().catch((err) => { this.cloud.lastError = err.message; });
+      }
     }
     this.lan.configured = this.device.kind === 'primary' ? !!this.server : !!this.lanPeer();
     if (this.autoStart) {
       if (this.device.kind === 'client') this.schedule('lan', LAN_EVERY_MS);
-      if (this.cloudPeer() || this.cloudUrl) this.schedule('cloud', CLOUD_EVERY_MS);
+      if (this.cloudPeer() || cloudUrl) this.schedule('cloud', CLOUD_EVERY_MS);
     }
   }
 
@@ -208,11 +227,15 @@ class SyncEngine {
 
   // Head Office registers the organisation with the gateway once, then sends everything it has.
   async registerOrg(setupKey = config.cloudSetupKey) {
+    const url = this.local('cloud_url') || this.cloudUrl;
+    if (!url) throw new Error('Cloud gateway URL is not configured');
+    this.cloudUrl = url;
     const org = this.db.prepare('SELECT * FROM org LIMIT 1').get();
-    const peer = makePeer({ baseUrl: this.cloudUrl, token: null, fetchImpl: this.fetchImpl });
-    const res = await peer.post('/v1/org/register', { orgId: org.id, orgCode: org.code, orgName: org.name, deviceId: this.device.id, deviceName: this.device.name, branchId: this.device.branch_id, setupKey });
+    const peer = makePeer({ baseUrl: url, token: null, fetchImpl: this.fetchImpl });
+    const actualKey = setupKey || this.local('cloud_setup_key') || config.cloudSetupKey;
+    const res = await peer.post('/v1/org/register', { orgId: org.id, orgCode: org.code, orgName: org.name, deviceId: this.device.id, deviceName: this.device.name, branchId: this.device.branch_id, setupKey: actualKey });
     this.app.localSet('cloud_token', res.token);
-    this.app.localSet('cloud_url', this.cloudUrl);
+    this.app.localSet('cloud_url', url);
     this.cloud.configured = true;
     logSync(this.db, { channel: 'cloud', direction: 'both', status: 'info', message: 'Organisation registered with the cloud' });
     return res;

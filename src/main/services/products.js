@@ -55,7 +55,7 @@ function shapeRow(ctx, r) {
     storageId: r.storage_id, storageName: r.storage_name,
     baseUnit: r.base_unit, packUnit: r.pack_unit, packSize: r.pack_size,
     rxRequired: r.rx_required === 1, controlled: r.controlled === 1, coldChain: r.cold_chain === 1, drapRegNo: r.drap_reg_no,
-    taxRateBp: r.tax_rate_bp, mrp: r.mrp, tradePrice: r.trade_price, branchMrp: r.mrp_override,
+    taxRateBp: r.tax_rate_bp, defaultDiscountBp: r.default_discount_bp || 0, discountPercent: (r.default_discount_bp || 0) / 100, mrp: r.mrp, tradePrice: r.trade_price, branchMrp: r.mrp_override,
     productMinStock: r.min_stock, productMaxStock: r.max_stock, productReorderLevel: r.reorder_level, productReorderQty: r.reorder_qty,
     ...lv, rack: r.rack,
     defaultSupplierId: r.default_supplier_id, defaultSupplierName: r.supplier_name, notes: r.notes, active: r.active === 1,
@@ -101,6 +101,7 @@ function readForm(ctx, params, existing) {
     cold_chain: v.bool(params, 'coldChain') ? 1 : 0,
     drap_reg_no: v.text(params, 'drapRegNo', 'DRAP registration number', { max: 60 }),
     tax_rate_bp: v.percent(params, 'taxRate', 'Tax rate'),
+    default_discount_bp: v.percent(params, 'discountPercent', 'Discount'),
     mrp: v.money(params, 'mrp', 'MRP (per pack)', { fallback: 0 }),
     trade_price: existing && !canSeeCost(ctx) ? existing.trade_price : v.money(params, 'tradePrice', 'Trade price (per pack)', { fallback: 0 }),
     min_stock: v.int(params, 'minStock', 'Minimum stock', { fallback: 0 }),
@@ -116,10 +117,20 @@ function readForm(ctx, params, existing) {
   // List fields accept an id, or a typed name that is added to the list.
   for (const [field, kind, col] of [['formId', 'form', 'form_id'], ['categoryId', 'category', 'category_id'], ['manufacturerId', 'manufacturer', 'manufacturer_id'], ['drugClassId', 'drug_class', 'drug_class_id'], ['storageId', 'storage', 'storage_id']]) {
     const raw = params[field];
-    if (raw && db.prepare('SELECT 1 FROM lookups WHERE id = ? AND kind = ?').get(raw, kind)) f[col] = raw;
-    else if (params[`${field}New`]) f[col] = { newName: String(params[`${field}New`]).trim(), kind };
-    else if (raw) invalid(field, 'error.invalid', { field });
-    else f[col] = null;
+    const newName = params[`${field}New`] ? String(params[`${field}New`]).trim() : '';
+    if (raw && db.prepare('SELECT 1 FROM lookups WHERE id = ? AND kind = ?').get(raw, kind)) {
+      f[col] = raw;
+    } else if (raw && db.prepare('SELECT id FROM lookups WHERE kind = ? AND name = ? COLLATE NOCASE').get(kind, String(raw).trim())) {
+      f[col] = db.prepare('SELECT id FROM lookups WHERE kind = ? AND name = ? COLLATE NOCASE').get(kind, String(raw).trim()).id;
+    } else if (newName) {
+      f[col] = { newName, kind };
+    } else if (raw && (kind === 'manufacturer' || !/^[0-9a-zA-Z]{26}$/.test(String(raw)))) {
+      f[col] = { newName: String(raw).trim(), kind };
+    } else if (raw) {
+      invalid(field, 'error.invalid', { field });
+    } else {
+      f[col] = null;
+    }
   }
   if (params.image !== undefined) {
     const img = params.image ? String(params.image) : null;
@@ -227,10 +238,10 @@ function insertProduct(ctx, f, extra, barcodes) {
   const now = nowIso();
   const sku = f.sku || nextNo(ctx, 'SKU');
   ctx.db.prepare(`INSERT INTO products (id, sku, brand_name, generic_name, strength, form_id, category_id, manufacturer_id, drug_class_id, storage_id,
-      base_unit, pack_unit, pack_size, rx_required, controlled, cold_chain, drap_reg_no, tax_rate_bp, mrp, trade_price,
+      base_unit, pack_unit, pack_size, rx_required, controlled, cold_chain, drap_reg_no, tax_rate_bp, default_discount_bp, mrp, trade_price,
       min_stock, max_stock, reorder_level, reorder_qty, default_supplier_id, image, notes, active, created_by, created_at, updated_at)
     VALUES (@id, @sku, @brand_name, @generic_name, @strength, @form_id, @category_id, @manufacturer_id, @drug_class_id, @storage_id,
-      @base_unit, @pack_unit, @pack_size, @rx_required, @controlled, @cold_chain, @drap_reg_no, @tax_rate_bp, @mrp, @trade_price,
+      @base_unit, @pack_unit, @pack_size, @rx_required, @controlled, @cold_chain, @drap_reg_no, @tax_rate_bp, @default_discount_bp, @mrp, @trade_price,
       @min_stock, @max_stock, @reorder_level, @reorder_qty, @default_supplier_id, @image, @notes, 1, @by, @now, @now)`)
     .run({ ...f, image: f.image || null, id, sku, by: ctx.userId || null, now });
   syncUnits(ctx, id, f, extra);
@@ -242,7 +253,7 @@ function insertProduct(ctx, f, extra, barcodes) {
 }
 
 const EDIT_FIELDS = ['sku', 'brand_name', 'generic_name', 'strength', 'form_id', 'category_id', 'manufacturer_id', 'drug_class_id', 'storage_id', 'base_unit', 'pack_unit', 'pack_size',
-  'rx_required', 'controlled', 'cold_chain', 'drap_reg_no', 'tax_rate_bp', 'mrp', 'trade_price', 'min_stock', 'max_stock', 'reorder_level', 'reorder_qty', 'default_supplier_id', 'notes'];
+  'rx_required', 'controlled', 'cold_chain', 'drap_reg_no', 'tax_rate_bp', 'default_discount_bp', 'mrp', 'trade_price', 'min_stock', 'max_stock', 'reorder_level', 'reorder_qty', 'default_supplier_id', 'notes'];
 
 function update(ctx, params) {
   const db = ctx.db;

@@ -2,6 +2,7 @@
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../strings/index.js';
+import { customSelect } from './custom-select.js';
 
 export function input(props = {}) {
   return h('input.input', { type: 'text', autocomplete: 'off', spellcheck: 'false', ...props });
@@ -12,9 +13,7 @@ export function textarea(props = {}) {
 }
 
 export function select(options, props = {}) {
-  const el = h('select.input', props);
-  for (const o of options) el.append(h('option', { value: o.value, selected: String(o.value) === String(props.value) }, o.label));
-  return el;
+  return customSelect(options, props);
 }
 
 export function passwordInput(props = {}) {

@@ -96,7 +96,7 @@ async function joinExisting(ctx, params) {
   } else {
     v.code(params, 'orgCode', 'Organisation code', { min: 3, max: 12, messageKey: 'setup.orgCodeFormat' });
     // Without a cloud address in this build, say so before asking for any code.
-    const cloudUrl = (app.sync && app.sync.cloudUrl) || require('../config').cloudUrl;
+    const cloudUrl = v.text(params, 'cloudUrl', 'Cloud gateway address') || (app.sync && app.sync.cloudUrl) || app.localGet('cloud_url') || require('../config').cloudUrl;
     if (!cloudUrl) fail('SYNC_NOT_AVAILABLE', 'setup.joinNeedsSync');
     const useRecovery = v.bool(params, 'useRecovery');
     const code = joinCodes.normalise(useRecovery ? params.recoveryKey : params.joinCode);
@@ -139,7 +139,12 @@ function auditJoin(app, joined, deviceName) {
 function register(define) {
   define('setup.createHeadOffice', { auth: 'none', allowBeforeSetup: true }, createHeadOffice);
   define('setup.joinExisting', { auth: 'none', allowBeforeSetup: true }, joinExisting);
-  define('setup.defaults', { auth: 'none', allowBeforeSetup: true }, () => ({ deviceName: os.hostname(), minPassword: SETUP_MIN_PASSWORD }));
+  define('setup.defaults', { auth: 'none', allowBeforeSetup: true }, (ctx) => ({
+    deviceName: os.hostname(),
+    minPassword: SETUP_MIN_PASSWORD,
+    hasCloud: !!(require('../config').cloudUrl || (ctx.app && ctx.app.sync && ctx.app.sync.cloudUrl) || (ctx.app && ctx.app.localGet('cloud_url'))),
+    cloudUrl: (ctx.app && ctx.app.localGet('cloud_url')) || require('../config').cloudUrl || '',
+  }));
 }
 
 module.exports = { register, SETUP_MIN_PASSWORD };

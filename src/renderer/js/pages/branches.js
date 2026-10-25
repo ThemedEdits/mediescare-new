@@ -106,12 +106,12 @@ export async function render(page, { params, navigate }) {
           const res = await call('branches.create', { ...values, admin: { fullName: values.adminFullName, username: values.adminUsername } });
           m.close();
           load();
-          toast(t('branches.created', { name: res.branch.name }));
+          toast(t('branches.created', { name: res.branch.name }), { type: 'success', title: t('branches.addedTitle') });
           await showSecret({ title: t('users.tempPasswordTitle'), text: t('branches.createdManager', { username: res.admin.username }), secret: res.admin.temporaryPassword });
         } else {
           await call('branches.update', { id: b.id, ...values });
           m.close();
-          toast(t('common.saved'));
+          toast(t('common.saved'), { type: 'success', title: t('branches.updatedTitle') });
           load();
         }
       } catch (err) {

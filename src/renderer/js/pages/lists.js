@@ -45,10 +45,15 @@ export async function render(page, { params }) {
     cancel.onclick = () => m.close();
     save.onclick = () => busy(save, null, async () => {
       try {
-        if (row) await call('lookups.update', { id: row.id, name: form.value('name'), active: active.control.checked });
-        else await call('lookups.create', { kind, name: form.value('name') });
+        const itemName = form.value('name');
+        const kindLabel = t(`lists.${kind}`);
+        if (row) await call('lookups.update', { id: row.id, name: itemName, active: active.control.checked });
+        else await call('lookups.create', { kind, name: itemName });
         m.close();
-        toast(t('common.saved'));
+        toast(row ? t('lists.itemUpdated', { kind: kindLabel, name: itemName }) : t('lists.itemAdded', { kind: kindLabel, name: itemName }), {
+          type: 'success',
+          title: row ? t('lists.updatedTitle') : t('lists.addedTitle'),
+        });
         load();
       } catch (err) { form.showError(err); }
     });

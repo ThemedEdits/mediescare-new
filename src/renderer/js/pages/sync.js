@@ -18,44 +18,137 @@ export async function render(page) {
   const syncBtn = can('sync.manual') ? h('button.btn.primary', { type: 'button' }, icon('refresh', 'sm'), t('sync.now')) : null;
   page.append(h('div.page-head', h('div', h('h1', t('sync.title')), h('p.sub', t('sync.sub'))), syncBtn), top);
   if (syncBtn) syncBtn.onclick = () => busy(syncBtn, t('sync.syncing'), async () => {
-    try { const res = await call('sync.now'); draw(res.status); toast(t('sync.done')); logTable.refresh(); } catch (err) { toastError(err); }
+    try {
+      const res = await call('sync.now');
+      draw(res.status);
+      logTable.refresh();
+      if (!res.anyRan) {
+        toast(t('sync.notConfiguredWarning'), { type: 'warning' });
+        return;
+      }
+      const cloudResult = res.results && res.results.cloud;
+      const lanResult = res.results && res.results.lan;
+      if (cloudResult && cloudResult.ok === false) {
+        toast(cloudResult.error || t('sync.syncFailed'), { type: 'error' });
+      } else if (lanResult && lanResult.ok === false) {
+        toast(lanResult.error || t('sync.syncFailed'), { type: 'error' });
+      } else {
+        toast(t('sync.done'));
+      }
+    } catch (err) { toastError(err); }
   });
 
-  function channelCard(title, ch, extra) {
-    return h('div.card', h('div.card-head', h('h2', title), h('span.badge', { class: STATE_CLASS[ch.state] || '' }, t(`syncState.${ch.state}`))),
-      h('div.card-body.stack', kv([
-        [t('sync.lastOk'), ch.lastOk ? fmt.dateTime(ch.lastOk) : t('common.never')],
-        [t('sync.pending'), String(ch.pending || 0)],
-        ch.lastError ? [t('sync.lastError'), h('span', { style: { color: 'var(--danger)' } }, ch.lastError)] : null,
-        ch.clockSkewMs !== null && ch.clockSkewMs !== undefined ? [t('sync.clock'), Math.abs(ch.clockSkewMs) > 120000 ? h('span', { style: { color: 'var(--danger)' } }, t('sync.clockOff', { min: Math.round(Math.abs(ch.clockSkewMs) / 60000) })) : t('sync.clockOk')] : null,
-        ...(extra || []),
-      ])));
+  function channelCard({ title, badgeState, iconName, descTitle, descText, items, actions, note }) {
+    const descBox = h('div.form-note', { style: { marginBottom: '14px', alignItems: 'flex-start' } },
+      icon(iconName, 'sm'),
+      h('div', h('strong', descTitle), h('div.small.muted', { style: { marginTop: '2px', lineHeight: '1.4' } }, descText)));
+    const actionsBox = actions ? h('div.sync-card-foot', actions) : null;
+    const noteEl = note ? h('p.small.muted', { style: { marginTop: '8px' } }, note) : null;
+
+    const cardBody = h('div.card-body.stack',
+      descBox,
+      kv(items.filter(Boolean)),
+      actionsBox,
+      noteEl);
+
+    return h('div.card.sync-card',
+      h('div.card-head',
+        h('h2', title),
+        h('span.badge', { class: STATE_CLASS[badgeState] || '' }, t(`syncState.${badgeState}`))),
+      cardBody);
   }
 
   function draw(s) {
     const isPrimary = s.role === 'primary';
-    const lanExtra = isPrimary
-      ? [[t('sync.thisIs'), t('sync.primaryRole')], [t('sync.service'), s.lan.serving ? t('sync.servingOn', { port: s.lan.port }) : t('sync.notServing')]]
-      : [[t('sync.thisIs'), t('sync.clientRole')], [t('sync.mainAt'), s.lan.primaryUrl || '-']];
     const lanActions = h('div.row.wrap',
       isPrimary && can('devices.edit') && s.lan.serving ? h('button.btn', { type: 'button', onclick: () => pairDialog() }, icon('plus', 'sm'), t('sync.addComputer')) : null,
       !isPrimary && can('devices.edit') ? h('button.btn', { type: 'button', onclick: () => changePrimary(s.lan.primaryUrl) }, icon('edit', 'sm'), t('sync.changeMain')) : null);
-    const cloudExtra = [[t('sync.cloudAddress'), s.cloud.url || t('sync.noCloud')]];
-    const cloudActions = h('div.row.wrap',
-      isPrimary && state.me.branch.isHeadOffice && !s.cloud.configured && s.cloud.url && can('branches.view_all') ? h('button.btn.primary', { type: 'button', onclick: connectCloud }, icon('cloud', 'sm'), t('sync.connectCloud')) : null);
-    const lanCard = channelCard(t('sync.lan'), s.lan, lanExtra);
-    lanCard.querySelector('.card-body').append(lanActions);
-    const cloudCard = channelCard(t('sync.cloud'), s.cloud, cloudExtra);
-    cloudCard.querySelector('.card-body').append(cloudActions);
-    if (!isPrimary) cloudCard.querySelector('.card-body').append(h('p.small.muted', t('sync.clientCloudNote')));
+
+    const canManageCloud = isPrimary && (can('branches.view_all') || can('settings.edit'));
+    const configCloudBtn = canManageCloud ? h('button.btn', { type: 'button', onclick: () => configureCloudDialog(s.cloud.url) }, icon('settings', 'sm'), t('sync.configureCloud')) : null;
+    const connectBtn = isPrimary && state.me.branch.isHeadOffice && !s.cloud.configured && s.cloud.url && canManageCloud ? h('button.btn.primary', { type: 'button', onclick: connectCloud }, icon('cloud', 'sm'), t('sync.connectCloud')) : null;
+    const cloudActions = (configCloudBtn || connectBtn) ? h('div.row.wrap', configCloudBtn, connectBtn) : null;
+
+    const lanItems = [
+      [t('sync.scope'), t('sync.scopeLan')],
+      [t('sync.thisIs'), isPrimary ? t('sync.primaryRole') : t('sync.clientRole')],
+      [t('sync.service'), isPrimary ? (s.lan.serving ? t('sync.servingOn', { port: s.lan.port }) : t('sync.notServing')) : (s.lan.primaryUrl || '-')],
+      [t('sync.lastOk'), s.lan.lastOk ? fmt.dateTime(s.lan.lastOk) : (isPrimary ? t('sync.lanNeverOk') : t('common.never'))],
+      [t('sync.pending'), String(s.lan.pending || 0)],
+      s.lan.lastError ? [t('sync.lastError'), h('span', { style: { color: 'var(--danger)' } }, s.lan.lastError)] : null,
+    ];
+
+    const cloudItems = [
+      [t('sync.scope'), t('sync.scopeCloud')],
+      [t('sync.cloudAddress'), s.cloud.url ? h('span.mono.small', { style: { wordBreak: 'break-all' } }, s.cloud.url) : t('sync.noCloud')],
+      s.cloud.url ? [t('sync.autoSync'), t('sync.autoSyncInterval')] : null,
+      [t('sync.lastOk'), s.cloud.lastOk ? fmt.dateTime(s.cloud.lastOk) : t('common.never')],
+      [t('sync.pending'), String(s.cloud.pending || 0)],
+      s.cloud.lastError ? [t('sync.lastError'), h('span', { style: { color: 'var(--danger)' } }, s.cloud.lastError)] : null,
+      s.cloud.clockSkewMs !== null && s.cloud.clockSkewMs !== undefined ? [t('sync.clock'), Math.abs(s.cloud.clockSkewMs) > 120000 ? h('span', { style: { color: 'var(--danger)' } }, t('sync.clockOff', { min: Math.round(Math.abs(s.cloud.clockSkewMs) / 60000) })) : t('sync.clockOk')] : null,
+    ];
+
+    const lanCard = channelCard({
+      title: t('sync.lan'),
+      badgeState: s.lan.state,
+      iconName: 'monitor',
+      descTitle: t('sync.lanDescTitle'),
+      descText: t('sync.lanDesc'),
+      items: lanItems,
+      actions: lanActions,
+    });
+
+    const cloudCard = channelCard({
+      title: t('sync.cloud'),
+      badgeState: s.cloud.state,
+      iconName: 'cloud',
+      descTitle: t('sync.cloudDescTitle'),
+      descText: t('sync.cloudDesc'),
+      items: cloudItems,
+      actions: cloudActions,
+      note: !isPrimary ? t('sync.clientCloudNote') : null,
+    });
+
     mount(top, h('div.stack',
       s.clockWarning ? h('div.form-error', icon('alertCircle', 'sm'), h('div', t('sync.clockWarning'))) : null,
-      h('div.grid-2', { style: { alignItems: 'start' } }, lanCard, cloudCard),
+      h('div.grid-2.sync-cards-grid', { style: { alignItems: 'stretch' } }, lanCard, cloudCard),
       s.conflicts ? conflictsCard() : null));
   }
 
   async function connectCloud() {
     try { draw(await call('cloud.connect')); toast(t('sync.cloudConnected')); } catch (err) { toastError(err); }
+  }
+
+  function configureCloudDialog(currentUrl) {
+    const defaultUrl = 'https://mediescare-gateway.mediescare.workers.dev';
+    const form = new Form();
+    const urlInput = input({ value: currentUrl || defaultUrl, placeholder: t('sync.cloudAddressPh'), maxlength: 300 });
+    const keyInput = input({ type: 'password', placeholder: t('sync.cloudSetupKeyPh'), maxlength: 200 });
+    const saveBtn = h('button.btn.primary', { type: 'button' }, icon('cloud', 'sm'), t('sync.saveAndConnect'));
+    const m = openModal({
+      title: t('sync.configureCloud'),
+      size: 'wide',
+      body: [
+        h('div.form-note', { style: { marginBottom: '14px' } }, icon('info', 'sm'),
+          h('div', h('strong', t('sync.cloudHelpTitle')), h('div.small.muted', t('sync.cloudHelpText')))),
+        form.errorBox,
+        form.add('url', fieldText(urlInput, t('sync.cloudAddress'), { required: true, hint: t('sync.cloudAddressHint') })),
+        form.add('setupKey', fieldText(keyInput, t('sync.cloudSetupKey'), { hint: t('sync.cloudSetupKeyHint') })),
+      ],
+      footer: [saveBtn],
+    });
+    saveBtn.onclick = () => busy(saveBtn, t('sync.connectingCloud'), async () => {
+      form.clearErrors();
+      try {
+        const nextStatus = await call('cloud.configure', { url: urlInput.value.trim(), setupKey: keyInput.value.trim() });
+        m.close();
+        draw(nextStatus);
+        toast(t('sync.cloudConnected'));
+        logTable.refresh();
+      } catch (err) {
+        form.showError(err);
+      }
+    });
   }
 
   async function pairDialog() {

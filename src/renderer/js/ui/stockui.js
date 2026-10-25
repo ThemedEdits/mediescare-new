@@ -8,6 +8,7 @@ import { can } from '../state.js';
 import { menu } from './popover.js';
 import { toast, toastError } from './toast.js';
 import * as fmt from './format.js';
+import { select } from './form.js';
 
 // ---- quantities ----------------------------------------------------------------------------------------------------
 
@@ -120,13 +121,16 @@ export function productPicker({ onPick, placeholder, autofocus = false, includeI
 // Batches of one product at this branch, nearest expiry first. Returns a <select>.
 export async function batchSelect(productId, { includeExpired = false, value = '', status = 'in_stock' } = {}) {
   const res = await call('stock.batches', { productId, status, pageSize: 200, sort: 'expiryDate' });
-  const sel = h('select.input', { 'aria-label': t('stock.batch') });
-  sel.append(h('option', { value: '' }, t('stock.chooseBatch')));
+  const options = [{ value: '', label: t('stock.chooseBatch') }];
   for (const b of res.rows) {
     if (!includeExpired && b.expiryState === 'expired') continue;
-    sel.append(h('option', { value: b.batchId, selected: b.batchId === value, disabled: b.quarantined && !includeExpired },
-      `${b.batchNo} - exp ${fmt.date(b.expiryDate)} - ${b.onHandText}${b.quarantined ? ` (${t('stock.quarantined')})` : ''}`));
+    options.push({
+      value: b.batchId,
+      label: `${b.batchNo} - exp ${fmt.date(b.expiryDate)} - ${b.onHandText}${b.quarantined ? ` (${t('stock.quarantined')})` : ''}`,
+      disabled: b.quarantined && !includeExpired,
+    });
   }
+  const sel = select(options, { value, 'aria-label': t('stock.batch') });
   sel.batches = res.rows;
   return sel;
 }
@@ -185,7 +189,7 @@ export function printButton({ source, title, columns, getParams, perm }) {
 
 export function docHeader({ title, sub, status, actions = [], back }) {
   return h('div.page-head',
-    h('div', back ? h('a.small', { href: back.href }, icon('chevronLeft', 'sm'), back.label) : null,
+    h('div', back ? h('a.small.back-link', { href: back.href }, icon('chevronLeft', 'sm'), h('span', back.label)) : null,
       h('div.row', h('h1', title), status || null), sub ? h('p.sub', sub) : null),
     h('div.row.wrap', ...actions.filter(Boolean)));
 }
@@ -195,7 +199,7 @@ export function kv(pairs) {
 }
 
 export function filterSelect(options, onChange, { value = '', width = '170px', label } = {}) {
-  const sel = h('select.input', { style: { width }, 'aria-label': label || '' }, ...options.map((o) => h('option', { value: o.value, selected: String(o.value) === String(value) }, o.label)));
+  const sel = select(options, { value, style: { width }, 'aria-label': label || '' });
   sel.addEventListener('change', () => onChange(sel.value));
   return sel;
 }

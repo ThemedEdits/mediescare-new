@@ -7,7 +7,7 @@ import { t } from '../strings/index.js';
 import { call } from '../api.js';
 import { can, state } from '../state.js';
 import { openModal, confirm } from '../ui/modal.js';
-import { Form, fieldText, input, textarea, busy } from '../ui/form.js';
+import { Form, fieldText, input, textarea, select, busy } from '../ui/form.js';
 import { toast, toastError } from '../ui/toast.js';
 import { productPicker, qtyText, moneyInput, rupees } from '../ui/stockui.js';
 import { menu } from '../ui/popover.js';
@@ -72,20 +72,40 @@ export async function render(page, { navigate }) {
   const customerBox = h('div.pos-customer');
   const totalsBox = h('div.pos-totals');
   const holdsBtn = h('button.btn', { type: 'button', onclick: () => showHolds() }, icon('history', 'sm'), t('pos.holds'), kbd('holds'));
-  const payBtn = h('button.btn.primary.pos-pay', { type: 'button', onclick: () => pay() }, t('pos.pay'), kbd('pay'));
+  const payBtn = h('button.btn.pos-pay-save', { type: 'button', onclick: () => pay({ print: false }) }, icon('check', 'sm'), t('pos.paySave'));
+  const payPrintBtn = h('button.btn.primary.pos-pay', { type: 'button', onclick: () => pay({ print: true }) }, icon('printer', 'sm'), t('pos.payPrint'), kbd('pay'));
+  const payGroup = h('div.pos-pay-group', payBtn, payPrintBtn);
   const keysHelp = h('div.pos-keys', ...POS_KEYS.map((k) => h('span', kbd(k.action), ' ', k.label())));
   page.append(
     h('div.pos', h('div.pos-left',
       h('div.pos-top', shiftBar),
       h('div.pos-search', picker),
       h('div.card.pos-cart', h('div.table-scroll', h('table.data.pos-table',
-        h('thead', h('tr', h('th', t('products.name')), h('th', t('stock.batch')), h('th', t('pos.unit')), h('th', t('docs.qty')), h('th.num', t('pos.price')), h('th.num', t('pos.discPct')), h('th.num', t('docs.amount')), h('th', ''))),
+        h('colgroup',
+          h('col', { style: { minWidth: '130px' } }),
+          h('col', { style: { width: '80px' } }),
+          h('col', { style: { width: '88px' } }),
+          h('col', { style: { width: '68px' } }),
+          h('col', { style: { width: '78px' } }),
+          h('col', { style: { width: '60px' } }),
+          h('col', { style: { width: '82px' } }),
+          h('col', { style: { width: '36px' } })
+        ),
+        h('thead', h('tr',
+          h('th', t('products.name')),
+          h('th', t('stock.batch')),
+          h('th', t('pos.unit')),
+          h('th', t('docs.qty')),
+          h('th.num', t('pos.price')),
+          h('th.num', t('pos.discPct')),
+          h('th.num', t('docs.amount')),
+          h('th', ''))),
         linesBody))),
       keysHelp),
     h('div.pos-right', customerBox, h('div.card', h('div.card-body', totalsBox)),
       h('div.row.wrap', h('button.btn', { type: 'button', onclick: () => holdBill() }, t('pos.hold'), kbd('hold')), holdsBtn,
         h('button.btn', { type: 'button', onclick: () => newBill(true) }, t('pos.clear'))),
-      payBtn,
+      payGroup,
       h('div.row.wrap', h('button.btn.sm', { type: 'button', onclick: () => findBill() }, icon('receipt', 'sm'), t('pos.findBill')),
         can('customers.edit') || can('pos.create') ? h('button.btn.sm', { type: 'button', onclick: () => receiveFromCustomer() }, icon('wallet', 'sm'), t('pos.receivePayment')) : null))));
 
@@ -174,7 +194,7 @@ export async function render(page, { navigate }) {
     return {
       productId: q.product.id, label: q.product.label, product: q.product, units: q.units, unitId: q.unitId, unitName: unit.name, factor: unit.factor,
       batchId: piece.batchId, batchNo: piece.batchNo, expiryDate: piece.expiryDate, nearExpiry: piece.nearExpiry, daysLeft: piece.daysLeft,
-      qty: piece.qty, unitPrice: piece.unitPrice, gross: piece.gross, discount: base.discount || (cart.customer && cart.customer.discountBp ? String(cart.customer.discountBp / 100) : ''),
+      qty: piece.qty, unitPrice: piece.unitPrice, gross: piece.gross, discount: base.discount || (q.product && q.product.discountPercent ? String(q.product.discountPercent) : (cart.customer && cart.customer.discountBp ? String(cart.customer.discountBp / 100) : '')),
       price: base.price || '', instructions: base.instructions || '',
     };
   }
@@ -268,23 +288,43 @@ export async function render(page, { navigate }) {
       linesBody.append(h('tr', h('td', { colspan: 8 }, h('div.empty', icon('cart'), h('h3', t('pos.emptyCart')), h('p', t('pos.emptyCartText'))))));
     }
     cart.lines.forEach((l, i) => {
-      const unitSel = h('select.input', { style: { width: '96px', height: '30px' }, 'aria-label': t('pos.unit') }, ...l.units.filter((u) => u.sellable).map((u) => h('option', { value: u.id, selected: u.id === l.unitId }, u.name)));
+      const unitOptions = l.units.filter((u) => u.sellable).map((u) => ({ value: u.id, label: u.name }));
+      const unitSel = select(unitOptions, { value: l.unitId, style: { width: '100%', height: '32px' }, 'aria-label': t('pos.unit') });
       unitSel.addEventListener('change', () => changeLine(i, { unitId: unitSel.value, units: Math.max(1, Math.round(l.qty / l.units.find((u) => u.id === unitSel.value).factor) || 1) }));
       const units = Math.round((l.qty / l.factor) * 1000) / 1000;
-      const qty = h('input.input.pos-qty', { type: 'number', min: 0, step: 'any', value: units, style: { width: '72px', height: '30px' }, 'aria-label': t('docs.qty') });
+      const qty = h('input.input.pos-qty', { type: 'number', min: 0, step: 'any', value: units, style: { width: '100%', height: '32px' }, 'aria-label': t('docs.qty') });
       qty.addEventListener('change', () => changeLine(i, { units: Number(qty.value) || 0 }));
       qty.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); qty.blur(); focusSearch(); } });
-      const disc = h('input.input', { type: 'number', min: 0, max: 100, step: '0.01', value: l.discount, placeholder: '0', style: { width: '64px', height: '30px', textAlign: 'right' }, 'aria-label': t('pos.discPct') });
+      const disc = h('input.input', { type: 'number', min: 0, max: 100, step: '0.01', value: l.discount, placeholder: '0', style: { width: '100%', height: '32px', textAlign: 'right' }, 'aria-label': t('pos.discPct') });
       disc.addEventListener('change', () => { l.discount = disc.value; redraw(); });
       // Anyone may open this to add dosage instructions; a changed price is checked by the main process (manager if needed).
-      const priceCell = h('button.btn.ghost.sm', { type: 'button', title: t('pos.changePrice'), onclick: () => overridePrice(i) },
+      const priceCell = h('button.btn.ghost.sm.pos-price-btn', { type: 'button', style: { width: '100%', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 6px' }, title: t('pos.changePrice'), onclick: () => overridePrice(i) },
         l.price !== '' ? h('span', { style: { color: 'var(--warning)' } }, fmt.money(paisa(l.price))) : fmt.money(l.unitPrice));
+      const batchBtn = h('button.btn.ghost.sm.pos-batch-btn', { type: 'button', style: { width: '100%', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }, onclick: () => chooseBatch(i), title: t('pos.changeBatch') },
+        h('span.mono', l.batchNo));
+      const removeBtn = h('button.btn.ghost.sm.icon-only.pos-del-btn', { type: 'button', style: { height: '32px', width: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }, 'aria-label': t('common.remove'), onclick: () => { cart.lines.splice(i, 1); selected = Math.min(selected, cart.lines.length - 1); redraw(); } }, icon('x', 'sm'));
+
+      const prodCell = h('div.pos-prod-cell',
+        h('div.pos-prod-title',
+          h('span', l.label),
+          l.product.rxRequired ? h('span.badge.warning', l.product.controlled ? t('products.controlledShort') : t('products.rxShort')) : null
+        )
+      );
+
+      // Conversion note only when selling multiple packs / factor > 1
+      const subQty = (l.factor > 1) ? h('div.cell-sub', `= ${qtyText(l.qty, l.product)}`) : null;
+      const subBatch = l.nearExpiry ? h('div.cell-sub', h('span.badge.warning', t('stock.daysLeft', { n: l.daysLeft }))) : null;
+      const amountCell = h('div.pos-amount', fmt.money(est.nets[i]));
+
       const tr = h('tr', { class: i === selected ? 'selected' : '', onclick: () => { selected = i; markSelected(); } },
-        h('td', h('div.cell-main.row', l.label, l.product.rxRequired ? h('span.badge.warning', l.product.controlled ? t('products.controlledShort') : t('products.rxShort')) : null)),
-        h('td', h('button.btn.ghost.sm', { type: 'button', onclick: () => chooseBatch(i), title: t('pos.changeBatch') }, h('span.mono', l.batchNo), l.nearExpiry ? h('span.badge.warning', { style: { marginLeft: '4px' } }, t('stock.daysLeft', { n: l.daysLeft })) : null)),
-        h('td', unitSel), h('td', qty, h('div.cell-sub', qtyText(l.qty, l.product))), h('td.num', priceCell), h('td.num', disc),
-        h('td.num', h('strong', fmt.money(est.nets[i]))),
-        h('td', h('button.btn.ghost.sm.icon-only', { type: 'button', 'aria-label': t('common.remove'), onclick: () => { cart.lines.splice(i, 1); selected = Math.min(selected, cart.lines.length - 1); redraw(); } }, icon('x', 'sm'))));
+        h('td', prodCell),
+        h('td', batchBtn, subBatch),
+        h('td', unitSel),
+        h('td', qty, subQty),
+        h('td.num', priceCell),
+        h('td.num', disc),
+        h('td.num', amountCell),
+        h('td', removeBtn));
       linesBody.append(tr);
     });
     drawCustomer();
@@ -299,7 +339,14 @@ export async function render(page, { navigate }) {
 
   function drawTotals(est = estimate()) {
     const discInput = h('input.input', { type: 'number', min: 0, step: '0.01', value: cart.billDiscount, placeholder: '0', style: { width: '90px', textAlign: 'right' }, id: 'pos-bill-discount', 'aria-label': t('pos.billDiscount') });
-    const typeSel = h('select.input', { style: { width: '70px' }, 'aria-label': t('pos.billDiscount') }, h('option', { value: 'percent', selected: cart.billDiscountType === 'percent' }, '%'), h('option', { value: 'amount', selected: cart.billDiscountType === 'amount' }, 'Rs'));
+    const typeSel = select([
+      { value: 'percent', label: '%' },
+      { value: 'amount', label: 'Rs' },
+    ], {
+      value: cart.billDiscountType,
+      style: { width: '70px', height: '32px' },
+      'aria-label': t('pos.billDiscount'),
+    });
     discInput.addEventListener('change', () => { cart.billDiscount = discInput.value; drawTotals(); redrawNets(); });
     typeSel.addEventListener('change', () => { cart.billDiscountType = typeSel.value; drawTotals(); redrawNets(); });
     const row = (labelText, value, cls) => h('div.row.between', { class: cls || '' }, h('span', labelText), h('span.num', value));
@@ -314,7 +361,7 @@ export async function render(page, { navigate }) {
 
   function redrawNets() {
     const est = estimate();
-    [...linesBody.children].forEach((tr, i) => { const cell = tr.children[6]; if (cell && est.nets[i] !== undefined) cell.replaceChildren(h('strong', fmt.money(est.nets[i]))); });
+    [...linesBody.children].forEach((tr, i) => { const cell = tr.children[6]; if (cell && est.nets[i] !== undefined) cell.replaceChildren(h('div.pos-amount', fmt.money(est.nets[i]))); });
     pushDisplay(est);
   }
 
@@ -421,7 +468,7 @@ export async function render(page, { navigate }) {
   }
 
   // ---- paying ----
-  function pay() {
+  function pay({ print = true } = {}) {
     if (!cart.lines.length) return;
     const est = estimate();
     const fields = {
@@ -440,18 +487,25 @@ export async function render(page, { navigate }) {
     };
     for (const el of Object.values(fields)) el.addEventListener('input', update);
     const row = (key, labelText) => h('div.row', { style: { marginBottom: '8px' } }, h('span', { style: { width: '110px' } }, labelText), fields[key], refs[key] || h('span'));
-    const finish = h('button.btn.primary', { type: 'button', style: { height: '44px', fontSize: '16px' } }, t('pos.finish'), h('span.kbd', 'Enter'));
+    const finishSave = h('button.btn', { type: 'button', style: { height: '44px' } }, icon('check', 'sm'), t('pos.paySave'));
+    const finishPrint = h('button.btn.primary', { type: 'button', style: { height: '44px', fontSize: '15px' } }, icon('printer', 'sm'), t('pos.payPrint'), h('span.kbd', 'Enter'));
     const form = new Form();
     const m = openModal({
       title: t('pos.payTitle', { total: fmt.money(est.total) }),
       body: [form.errorBox, row('cash', t('payMethod.cash')), row('card', t('payMethod.card')), row('easypaisa', 'Easypaisa'), row('jazzcash', 'JazzCash'), row('bank', t('payMethod.bank')), status,
         cart.customer ? h('p.small.muted', t('pos.creditNote', { name: cart.customer.name })) : h('p.small.muted', t('pos.walkInNote'))],
-      footer: [finish],
+      footer: [finishSave, finishPrint],
     });
     update();
     fields.cash.select();
-    m.modal.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.target.matches('textarea')) { e.preventDefault(); finish.click(); } });
-    finish.onclick = () => busy(finish, null, async () => {
+    m.modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.target.matches('textarea')) {
+        e.preventDefault();
+        (print ? finishPrint : finishSave).click();
+      }
+    });
+    const doSubmit = (shouldPrint) => async () => {
+      const activeBtn = shouldPrint ? finishPrint : finishSave;
       form.clearErrors();
       const payload = {
         lines: cart.lines.map((l) => ({ productId: l.productId, unitId: l.unitId, batchId: l.batchId, qty: l.qty, discount: l.discount, price: l.price, instructions: l.instructions })),
@@ -459,9 +513,16 @@ export async function render(page, { navigate }) {
         cashTendered: fields.cash.value, notes: cart.notes, prescription: cart.prescription || undefined,
         payments: ['card', 'easypaisa', 'jazzcash', 'bank'].filter((k) => paisa(fields[k].value) > 0).map((k) => ({ method: k, amount: fields[k].value, reference: refs[k].value })),
       };
-      const result = await submit(payload, form);
-      if (result) { m.close(); done(result); }
-    });
+      await busy(activeBtn, null, async () => {
+        const result = await submit(payload, form);
+        if (result) {
+          m.close();
+          await done(result, shouldPrint);
+        }
+      });
+    };
+    finishSave.onclick = doSubmit(false);
+    finishPrint.onclick = doSubmit(true);
   }
 
   // Sends the bill; asks for a manager or prescription details when the main process says they are needed.
@@ -515,25 +576,26 @@ export async function render(page, { navigate }) {
     });
   }
 
-  async function done(res) {
+  async function done(res, shouldPrint = false) {
     lastSaleId = res.id;
+    toast(t('pos.saleCompleted', { bill: res.docNo }), { type: 'success', title: t('pos.saleTitle') });
     newBill(false);
     pushDisplay({ nets: [], total: res.total }, res.change, t('pos.thanks'));
     let printed = false;
-    if (res.autoPrint) {
-      try { await call('sales.print', { id: res.id }); printed = true; } catch (err) { toastError(err); }
+    if (shouldPrint || res.autoPrint) {
+      try {
+        await call('sales.print', { id: res.id });
+        printed = true;
+      } catch (err) {
+        toastError(err);
+      }
     }
-    const next = h('button.btn.primary', { type: 'button', autofocus: true, style: { height: '42px' } }, t('pos.nextBill'), h('span.kbd', 'Enter'));
-    const m = openModal({
-      title: t('pos.saleDone', { doc: res.docNo }),
-      body: [h('div.pos-done', h('div.small.muted', t('pos.change')), h('div.pos-change', fmt.money(res.change)),
-        h('div.small', t('pos.paidTotal', { paid: fmt.money(res.paid), total: fmt.money(res.total) })), res.credit ? h('div.small', { style: { color: 'var(--warning)' } }, t('pos.onAccountAmount', { amount: fmt.money(res.credit) })) : null,
-        printed ? h('div.small.muted', t('pos.receiptPrinted')) : null)],
-      footer: [h('button.btn', { type: 'button', onclick: () => call('sales.print', { id: res.id }).catch(toastError) }, icon('printer', 'sm'), t('pos.printReceipt')),
-        h('button.btn', { type: 'button', onclick: () => { m.close(); labelsFor(res.id); } }, t('pos.medicineLabels')), next],
-    });
-    next.onclick = () => m.close();
+    const msg = printed
+      ? t('pos.saleDoneToastPrinted', { doc: res.docNo, change: fmt.money(res.change) })
+      : t('pos.saleDoneToast', { doc: res.docNo, change: fmt.money(res.change) });
+    toast(msg);
     loadShift();
+    focusSearch();
   }
 
   async function labelsFor(saleId) {
@@ -595,7 +657,7 @@ export async function render(page, { navigate }) {
     discount: () => { const el = document.getElementById('pos-bill-discount'); if (el) { el.focus(); el.select(); } },
     hold: () => holdBill(),
     holds: () => showHolds(),
-    pay: () => pay(),
+    pay: () => pay({ print: true }),
     remove: () => { if (selected >= 0 && cart.lines[selected]) { cart.lines.splice(selected, 1); selected = Math.min(selected, cart.lines.length - 1); redraw(); focusSearch(); } },
     newBill: () => newBill(true),
     reprint: () => { if (lastSaleId) call('sales.print', { id: lastSaleId, reprint: true }).catch(toastError); },
@@ -629,7 +691,7 @@ export async function render(page, { navigate }) {
 export function receivePaymentDialog(c, onDone) {
   const form = new Form();
   const amt = moneyInput({ value: rupees(c.balance), autofocus: true });
-  const method = h('select.input', ...['cash', 'card', 'easypaisa', 'jazzcash', 'bank'].map((m) => h('option', { value: m }, t(`payMethod.${m}`))));
+  const method = select(['cash', 'card', 'easypaisa', 'jazzcash', 'bank'].map((m) => ({ value: m, label: t(`payMethod.${m}`) })), { style: { width: '100%' } });
   const ref = input({ maxlength: 80 });
   const save = h('button.btn.primary', { type: 'button' }, t('pos.receive'));
   const m = openModal({

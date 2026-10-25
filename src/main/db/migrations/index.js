@@ -8,4 +8,5 @@ module.exports = [
   require('./005_insight'),
   require('./006_performance'),
   require('./007_join'),
+  require('./008_product_discount'),
 ];

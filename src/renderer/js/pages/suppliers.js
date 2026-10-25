@@ -73,7 +73,10 @@ export function supplierForm(s, onSaved) {
       if (!can('cost.view')) values.creditLimit = rupees(v.creditLimit);
       const res = await call(isNew ? 'suppliers.create' : 'suppliers.update', isNew ? values : { id: s.id, ...values });
       m.close();
-      toast(t('common.saved'));
+      toast(isNew ? t('suppliers.createdSuccess', { name: values.name }) : t('suppliers.updatedSuccess', { name: values.name }), {
+        type: 'success',
+        title: isNew ? t('suppliers.addedTitle') : t('suppliers.updatedTitle'),
+      });
       if (onSaved) onSaved(res);
     } catch (err) { form.showError(err); }
   });
@@ -90,7 +93,14 @@ export async function renderDetail(page, { params, navigate }) {
     can('suppliers.delete') ? h('button.btn', { type: 'button', class: s.active ? 'danger' : '', onclick: async () => {
       let reason = '';
       if (s.active) { reason = await confirm({ title: t('suppliers.deactivateTitle', { name: s.name }), text: t('suppliers.deactivateText'), confirmLabel: t('products.deactivate'), danger: true, requireReason: true }); if (reason === false) return; }
-      try { await call('suppliers.setActive', { id: s.id, active: !s.active, reason }); reload(); } catch (err) { toastError(err); }
+      try {
+        await call('suppliers.setActive', { id: s.id, active: !s.active, reason });
+        toast(!s.active ? t('suppliers.activatedSuccess', { name: s.name }) : t('suppliers.deactivatedSuccess', { name: s.name }), {
+          type: 'success',
+          title: !s.active ? t('suppliers.activatedTitle') : t('suppliers.deactivatedTitle'),
+        });
+        reload();
+      } catch (err) { toastError(err); }
     } }, s.active ? t('products.deactivate') : t('products.activate')) : null,
   ];
   page.append(docHeader({ title: s.name, sub: [s.code, s.city, s.phone].filter(Boolean).join(' - '), status: !s.active ? h('span.badge', t('common.inactive')) : null, back: { href: '#/suppliers', label: t('suppliers.title') }, actions }));

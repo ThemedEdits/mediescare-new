@@ -95,7 +95,7 @@ export async function renderReport(page, { params, navigate }) {
   let last = null;
   const query = () => Object.fromEntries(Object.entries(f).filter(([, v]) => v !== '' && v !== null));
   const exportCols = () => (last ? last.columns : []);
-  mount(head, h('div', h('a.small', { href: '#/reports' }, icon('chevronLeft', 'sm'), t('reports.title')), h('h1', def.title), h('p.sub', t(`reports.about.${def.key}`))),
+  mount(head, h('div', h('a.small.back-link', { href: '#/reports' }, icon('chevronLeft', 'sm'), h('span', t('reports.title'))), h('h1', def.title), h('p.sub', t(`reports.about.${def.key}`))),
     h('div.row', printButton({ source: 'reports.run', title: def.title, perm: 'reports.export', getParams: query, columns: exportCols }),
       exportButton({ source: 'reports.run', title: def.title, perm: 'reports.export', getParams: query, columns: exportCols })));
 

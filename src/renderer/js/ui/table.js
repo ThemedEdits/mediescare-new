@@ -4,6 +4,7 @@ import { h, debounce } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../strings/index.js';
 import { popover } from './popover.js';
+import { select } from './form.js';
 
 function storedColumns(id) {
   try { return JSON.parse(localStorage.getItem(`cols:${id}`) || 'null'); } catch (_) { return null; }
@@ -33,8 +34,11 @@ export function dataTable({
   const info = h('span');
   const prev = h('button.btn.sm.icon-only', { type: 'button', 'aria-label': t('table.prev') }, icon('chevronLeft', 'sm'));
   const next = h('button.btn.sm.icon-only', { type: 'button', 'aria-label': t('table.next') }, icon('chevronRight', 'sm'));
-  const sizeSel = h('select.input', { style: { width: '80px', height: '28px' }, 'aria-label': t('table.perPage') },
-    ...[10, 25, 50, 100].map((n) => h('option', { value: n, selected: n === pageSize }, String(n))));
+  const sizeSel = select([10, 25, 50, 100].map((n) => ({ value: n, label: String(n) })), {
+    value: pageSize,
+    style: { width: '80px', height: '28px' },
+    'aria-label': t('table.perPage'),
+  });
   const foot = h('div.table-foot', info, h('div.row', h('span.small.muted', t('table.perPage')), sizeSel, prev, next));
   const el = h('div.card', toolsEl, scroll, foot);
 

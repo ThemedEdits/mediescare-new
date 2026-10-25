@@ -13,6 +13,8 @@ import { keyFor } from './keys.js';
 
 let mainEl = null;
 let navEl = null;
+let indicatorPill = null;
+let navResizeObserver = null;
 let shellEl = null;
 let cleanup = null;
 let syncChip = null;
@@ -177,11 +179,32 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
     searchBtn, h('div.spacer'),
     actions);
 
-  navEl = h('nav.sidebar', { 'aria-label': 'Main menu' });
+  indicatorPill = h('div.nav-indicator-pill', { 'aria-hidden': 'true' });
+  navEl = h('nav.sidebar', { 'aria-label': 'Main menu' }, indicatorPill);
+  navEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.nav-item');
+    if (item && navEl.contains(item)) {
+      navEl.querySelectorAll('.nav-item').forEach((i) => {
+        i.classList.remove('active');
+        i.removeAttribute('aria-current');
+      });
+      item.classList.add('active');
+      item.setAttribute('aria-current', 'page');
+      updateNavIndicator(false);
+    }
+  });
+  if (typeof ResizeObserver !== 'undefined') {
+    navResizeObserver = new ResizeObserver(() => {
+      updateNavIndicator(false);
+    });
+    navResizeObserver.observe(navEl);
+  }
   mainEl = h('main.main', { id: 'main', tabindex: '-1' });
   shellEl = h('div.shell', { class: navCollapsed() ? 'nav-collapsed' : '' }, topbar, navEl, mainEl);
   toggleNav.addEventListener('click', () => {
     shellEl.classList.toggle('nav-collapsed');
+    updateNavIndicator(false);
+    setTimeout(() => updateNavIndicator(false), 50);
     try { localStorage.setItem('navCollapsed', shellEl.classList.contains('nav-collapsed') ? '1' : '0'); } catch (_) { /* not important */ }
   });
   mount(root, shellEl);
@@ -189,16 +212,61 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   return { route };
 }
 
+function updateNavIndicator(immediate = false) {
+  if (!navEl || !indicatorPill) return;
+  const activeItem = navEl.querySelector('.nav-item.active');
+  if (!activeItem || activeItem.offsetParent === null) {
+    indicatorPill.style.opacity = '0';
+    return;
+  }
+  const navRect = navEl.getBoundingClientRect();
+  const itemRect = activeItem.getBoundingClientRect();
+  const top = itemRect.top - navRect.top + navEl.scrollTop;
+  const left = itemRect.left - navRect.left + navEl.scrollLeft;
+  const width = itemRect.width;
+  const height = itemRect.height;
+
+  if (immediate) {
+    indicatorPill.style.transition = 'none';
+    indicatorPill.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+    indicatorPill.style.width = `${width}px`;
+    indicatorPill.style.height = `${height}px`;
+    indicatorPill.style.opacity = '1';
+    indicatorPill.offsetHeight;
+    indicatorPill.style.transition = '';
+  } else {
+    indicatorPill.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+    indicatorPill.style.width = `${width}px`;
+    indicatorPill.style.height = `${height}px`;
+    indicatorPill.style.opacity = '1';
+  }
+}
+
 function renderNav() {
   const { path: raw } = parseHash();
   const path = PARENT[raw] || raw;
-  const groups = GROUPS.map((g) => {
-    const items = ROUTES.filter((r) => r.group === g.key && allowed(r));
-    if (!items.length) return null;
-    return h('div.nav-group', h('div.nav-group-title', g.title()),
-      ...items.map((r) => h('a.nav-item', { href: `#/${r.path}`, class: r.path === path ? 'active' : '', title: r.title(), 'aria-current': r.path === path ? 'page' : null }, icon(r.icon), h('span', r.title()))));
-  });
-  mount(navEl, ...groups);
+  const existingGroups = navEl ? navEl.querySelectorAll('.nav-group') : [];
+
+  if (!existingGroups.length) {
+    const groups = GROUPS.map((g) => {
+      const items = ROUTES.filter((r) => r.group === g.key && allowed(r));
+      if (!items.length) return null;
+      return h('div.nav-group', h('div.nav-group-title', g.title()),
+        ...items.map((r) => h('a.nav-item', { href: `#/${r.path}`, class: r.path === path ? 'active' : '', title: r.title(), 'aria-current': r.path === path ? 'page' : null, 'data-path': r.path }, icon(r.icon), h('span', r.title()))));
+    }).filter(Boolean);
+    navEl.replaceChildren(indicatorPill, ...groups);
+    requestAnimationFrame(() => updateNavIndicator(true));
+  } else {
+    const items = navEl.querySelectorAll('.nav-item');
+    items.forEach((item) => {
+      const itemPath = item.dataset.path || (item.getAttribute('href') || '').replace(/^#\//, '');
+      const isActive = itemPath === path;
+      item.classList.toggle('active', isActive);
+      if (isActive) item.setAttribute('aria-current', 'page');
+      else item.removeAttribute('aria-current');
+    });
+    requestAnimationFrame(() => updateNavIndicator(false));
+  }
 }
 
 export async function route() {
@@ -212,7 +280,7 @@ export async function route() {
   if (cleanup) { try { cleanup(); } catch (_) { /* ignore */ } cleanup = null; }
   const token = ++renderToken;
   mount(mainEl, h('div.loading', h('span.spinner'), t('common.loading')));
-  document.title = `${r.title()} - ${t('app.name')}`;
+  document.title = r.title();
   try {
     const mod = await r.load();
     if (token !== renderToken || !mainEl) return;
@@ -324,6 +392,8 @@ const GROUP_ICON = {
 export function destroyShell() {
   renderToken++;
   if (cleanup) { try { cleanup(); } catch (_) { /* ignore */ } cleanup = null; }
+  if (navResizeObserver) { navResizeObserver.disconnect(); navResizeObserver = null; }
+  indicatorPill = null;
   mainEl = null;
   navEl = null;
   shellEl = null;

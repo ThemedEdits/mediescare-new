@@ -128,7 +128,10 @@ export async function render(page, { params }) {
           if (isNew) await call('roles.create', values);
           else await call('roles.update', { id: r.id, ...values });
           m.close();
-          toast(t('common.saved'));
+          toast(isNew ? t('roles.createdSuccess', { name: values.name }) : t('roles.updatedSuccess', { name: values.name }), {
+            type: 'success',
+            title: isNew ? t('roles.addedTitle') : t('roles.updatedTitle'),
+          });
           load();
         } catch (err) { form.showError(err); }
       });

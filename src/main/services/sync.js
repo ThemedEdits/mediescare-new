@@ -35,11 +35,15 @@ function register(define) {
     const e = engine(ctx);
     if (!e) fail('SYNC_NOT_AVAILABLE', 'setup.joinNeedsSync');
     const results = {};
+    let anyRan = false;
     for (const ch of ['lan', 'cloud']) {
-      if ((ch === 'lan' && e.lanPeer()) || (ch === 'cloud' && e.cloudPeer())) results[ch] = await e.run(ch);
+      if ((ch === 'lan' && e.lanPeer()) || (ch === 'cloud' && e.cloudPeer())) {
+        anyRan = true;
+        results[ch] = await e.run(ch);
+      }
     }
     ctx.db.transaction(() => audit.write(ctx.db, ctx.actor, { module: 'sync', action: 'sync_now', summary: 'Sync started by hand' }))();
-    return { results, status: status(ctx) };
+    return { results, anyRan, status: status(ctx) };
   });
 
   define('sync.log', { perm: 'sync.view' }, (ctx, params) => {
@@ -86,12 +90,40 @@ function register(define) {
     return status(ctx);
   });
 
-  define('cloud.connect', { perm: 'branches.view_all' }, async (ctx) => {
+  define('cloud.connect', { perm: ['branches.view_all', 'settings.edit'] }, async (ctx) => {
     const e = engine(ctx);
-    if (!e || !e.cloudUrl) fail('SYNC_NOT_AVAILABLE', 'sync.cloudNotBuilt');
+    const url = (e && e.cloudUrl) || ctx.app.localGet('cloud_url') || require('../config').cloudUrl;
+    if (!e || !url) fail('SYNC_NOT_AVAILABLE', 'sync.cloudNotBuilt');
     if (!ctx.app.device.is_head_office || ctx.app.device.kind !== 'primary') fail('FORBIDDEN', 'sync.onlyHeadOffice');
+    e.cloudUrl = url;
     try { await e.registerOrg(); } catch (err) { fail('CLOUD', 'sync.cloudFailed', { reason: err.message }); }
     await e.run('cloud');
+    e.schedule('cloud', 60000);
+    return status(ctx);
+  });
+
+  define('cloud.configure', { perm: ['branches.view_all', 'settings.edit'] }, async (ctx, params) => {
+    const rawUrl = v.text(params, 'url', 'Cloud address', { required: true, max: 300 });
+    const url = rawUrl.replace(/\/+$/, '');
+    if (!/^https?:\/\/[^\s/]+/.test(url)) fail('VALIDATION', 'error.invalid', { field: 'Cloud address' });
+    const setupKey = v.text(params, 'setupKey', 'Setup key', { max: 200 }) || '';
+    ctx.app.localSet('cloud_url', url);
+    if (setupKey) ctx.app.localSet('cloud_setup_key', setupKey);
+    const e = engine(ctx);
+    if (e) {
+      e.cloudUrl = url;
+      if (ctx.app.device && ctx.app.device.is_head_office && ctx.app.device.kind === 'primary') {
+        try {
+          await e.registerOrg(setupKey);
+        } catch (err) {
+          e.cloud.lastError = err.message;
+          fail('CLOUD', 'sync.cloudFailed', { reason: err.message });
+        }
+        await e.run('cloud');
+      }
+      e.schedule('cloud', 60000);
+    }
+    ctx.db.transaction(() => audit.write(ctx.db, ctx.actor, { module: 'sync', action: 'configure_cloud', summary: 'Cloud address configured', new: { url } }))();
     return status(ctx);
   });
 

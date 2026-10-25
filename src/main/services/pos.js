@@ -82,7 +82,7 @@ function quote(ctx, params) {
   const available = batches.reduce((a, b) => a + b.free, 0);
   const firstPack = batches[0] ? pricing.packPrice(db, ctx.branchId, batches[0]) : (pricing.branchPackPrice(db, ctx.branchId, p.id) ?? p.mrp);
   return {
-    product: { id: p.id, label: label(p), genericName: p.generic_name, packSize: p.pack_size, packUnit: p.pack_unit, baseUnit: p.base_unit, rxRequired: p.rx_required === 1, controlled: p.controlled === 1, taxBp: p.tax_rate_bp },
+    product: { id: p.id, label: label(p), genericName: p.generic_name, packSize: p.pack_size, packUnit: p.pack_unit, baseUnit: p.base_unit, rxRequired: p.rx_required === 1, controlled: p.controlled === 1, taxBp: p.tax_rate_bp, defaultDiscountBp: p.default_discount_bp || 0, discountPercent: (p.default_discount_bp || 0) / 100 },
     unitId: unit.id, units: units.map((u) => unitShape(u, firstPack, p.pack_size)), pieces, requested: base, short: Math.max(left, 0),
     available, availableText: stock.qtyText(available, p),
     batches: batches.map((b) => ({ batchId: b.id, batchNo: b.batch_no, expiryDate: b.expiry_date, ...expiryInfo(db, ctx.branchId, b.expiry_date), free: b.free, freeText: stock.qtyText(b.free, p), mrp: b.mrp })),
@@ -323,6 +323,7 @@ async function complete(ctx, params) {
     });
     consumeApproval(ctx, approval, docNo);
   })();
+  if (ctx.app && ctx.app.sync) ctx.app.sync.trigger('cloud');
   return { id, docNo, total, paid, change, credit, autoPrint: settings.get(db, 'receipt.autoPrint', ctx.branchId) };
 }
 

@@ -5,7 +5,7 @@ import { t } from '../strings/index.js';
 import { call } from '../api.js';
 import { dataTable } from '../ui/table.js';
 import { toast, toastError } from '../ui/toast.js';
-import { busy } from '../ui/form.js';
+import { busy, select } from '../ui/form.js';
 import { filterSelect } from '../ui/stockui.js';
 
 function toBase64(buffer) {
@@ -54,7 +54,8 @@ export async function render(page, { params, navigate }) {
   function stepMap() {
     const selects = {};
     const rows = session.fields.map((f) => {
-      const sel = h('select.input', { style: { width: '260px' } }, h('option', { value: '' }, t('import.notInFile')), ...session.headers.map((hd) => h('option', { value: hd, selected: session.mapping[f.key] === hd }, hd)));
+      const opts = [{ value: '', label: t('import.notInFile') }, ...session.headers.map((hd) => ({ value: hd, label: hd }))];
+      const sel = select(opts, { value: session.mapping[f.key] || '', style: { width: '260px' } });
       selects[f.key] = sel;
       return h('tr', h('td', f.label, f.required ? h('span', { style: { color: 'var(--danger)' } }, ' *') : null), h('td', sel));
     });

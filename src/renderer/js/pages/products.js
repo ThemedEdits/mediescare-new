@@ -130,6 +130,7 @@ export function openProductForm(p, { lists, onSaved }) {
       form.add('mrp', fieldText(moneyInput({ value: rupees(v.mrp) }), t('products.mrpPerPack'), { hint: t('products.mrpHint') })),
       can('cost.view') ? form.add('tradePrice', fieldText(moneyInput({ value: rupees(v.tradePrice) }), t('products.tradePerPack'))) : h('span'),
       form.add('taxRate', fieldText(input({ type: 'number', min: 0, max: 100, step: '0.01', value: v.taxRateBp ? v.taxRateBp / 100 : 0 }), t('products.taxRate'), { hint: t('products.taxHint') })),
+      form.add('discountPercent', fieldText(input({ type: 'number', min: 0, max: 100, step: '0.1', value: v.discountPercent || '' }), t('products.defaultDiscount'), { hint: t('products.defaultDiscountHint') })),
       !isNew ? form.add('priceReason', fieldText(input({ maxlength: 300 }), t('products.priceReason'), { hint: t('products.priceReasonHint') })) : h('span')),
     h('div.section-title', { style: { marginTop: '16px' } }, t('products.sectionLevels')),
     h('p.small.muted', t('products.levelsHint')),
@@ -149,19 +150,36 @@ export function openProductForm(p, { lists, onSaved }) {
   save.onclick = () => busy(save, null, async () => {
     form.clearErrors();
     const values = form.values();
+    const typedManNew = manNew.value.trim();
+    let mfrId = values.manufacturerId || '';
+    let mfrNew = typedManNew;
+    const comboText = (form.fields.manufacturerId && form.fields.manufacturerId.input && form.fields.manufacturerId.input.value || '').trim();
+    if (!mfrId && !mfrNew && comboText && comboText !== t('common.none')) {
+      const match = (lists.manufacturer || []).find((x) => x.name.toLowerCase() === comboText.toLowerCase());
+      if (match) mfrId = match.id;
+      else mfrNew = comboText;
+    }
     const payload = {
       ...values,
       id: p ? p.id : undefined,
+      manufacturerId: mfrId,
+      manufacturerIdNew: mfrId ? '' : mfrNew,
       rxRequired: rx.control.checked, controlled: controlled.control.checked, coldChain: cold.control.checked,
       units: [...unitsBox.children].map((r) => r.read()).filter((u) => u.name || u.factor),
       barcodes: barcodes.value.split(/[\s,]+/).map((b) => b.trim()).filter(Boolean),
-      manufacturerIdNew: values.manufacturerId ? '' : manNew.value.trim(),
     };
     if (!can('cost.view')) delete payload.tradePrice;
     try {
       const saved = await call(isNew ? 'products.create' : 'products.update', payload);
+      try {
+        const fresh = await call('lookups.all');
+        Object.assign(lists, fresh);
+      } catch (_) {}
       m.close();
-      toast(t('common.saved'));
+      toast(isNew ? t('products.createdSuccess', { name: saved.name }) : t('products.updatedSuccess', { name: saved.name }), {
+        type: 'success',
+        title: isNew ? t('products.addedTitle') : t('products.updatedTitle'),
+      });
       if (onSaved) onSaved(saved);
     } catch (err) { form.showError(err); }
   });

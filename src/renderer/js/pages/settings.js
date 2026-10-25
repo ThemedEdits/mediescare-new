@@ -86,10 +86,12 @@ export async function render(page) {
       } catch (err) { clear.clear(); form.showError(err); }
     });
 
-    holder.replaceChildren(
+    const items = [
       !editable ? h('div.form-note', { style: { marginBottom: '16px' } }, icon('lock', 'sm'), h('div', scope === 'global' ? t('settings.readOnlyGlobal') : t('settings.readOnlyBranch'))) : null,
       form.errorBox, ...cards,
-      editable ? h('div.row', { style: { marginTop: '16px' } }, h('div.spacer'), save) : null);
+      editable ? h('div.row', { style: { marginTop: '16px' } }, h('div.spacer'), save) : null,
+    ].filter(Boolean);
+    holder.replaceChildren(...items);
   }
   await draw();
 }

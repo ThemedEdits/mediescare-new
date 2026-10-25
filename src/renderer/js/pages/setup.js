@@ -23,7 +23,17 @@ export async function renderSetup(root, { onDone }) {
 
   function createWizard() {
     const form = new Form();
-    const values = {};
+    const values = {
+      orgName: 'Mediescare Pharmacy',
+      orgCode: 'MEDIESCARE',
+      branchName: 'Mediescare Head Office',
+      branchCode: 'HO',
+      address: 'Main Commercial Market, Lahore, Pakistan',
+      phone: '+92 42 35880000',
+      licenceNo: 'DL-LHR-2026-MED',
+      fullName: 'Mediescare Admin',
+      username: 'admin',
+    };
     let step = 0;
     const steps = [
       {
@@ -125,7 +135,8 @@ export async function renderSetup(root, { onDone }) {
     const client = h('input', { type: 'radio', name: modeName, value: 'client' });
     const pairing = fieldText(input({ inputmode: 'numeric', maxlength: 6, placeholder: '000000' }), t('setup.pairingCode'), { hint: t('setup.pairingCodeHint'), required: true });
     const address = fieldText(input({ maxlength: 200, placeholder: '192.168.1.10' }), t('setup.mainAddress'), { hint: t('setup.mainAddressHint'), required: true });
-    const orgCode = fieldText(input({ maxlength: 12, style: { textTransform: 'uppercase' } }), t('setup.joinOrgCode'), { required: true });
+    const cloudUrl = fieldText(input({ maxlength: 300, placeholder: 'https://gateway.example.com', value: defaults.cloudUrl || '' }), t('setup.cloudUrl'), { hint: t('setup.cloudUrlHint') });
+    const orgCode = fieldText(input({ maxlength: 12, value: 'MEDIESCARE', style: { textTransform: 'uppercase' } }), t('setup.joinOrgCode'), { required: true });
     const joinCode = fieldText(input({ maxlength: 20, placeholder: 'XXXX-XXXX-XXXX', style: { textTransform: 'uppercase' } }), t('setup.joinCode'), { required: true, hint: t('setup.joinCodeHint') });
     const recoveryKey = fieldText(input({ maxlength: 30, placeholder: 'XXXX-XXXX-XXXX-XXXX-XXXX', style: { textTransform: 'uppercase' } }), t('setup.recoveryKey'), { required: true, hint: t('setup.recoveryKeyHint') });
     const useRecovery = h('input', { type: 'checkbox' });
@@ -144,6 +155,7 @@ export async function renderSetup(root, { onDone }) {
       address.el.hidden = !client.checked;
       findBtn.hidden = !client.checked;
       orgCode.el.hidden = client.checked;
+      cloudUrl.el.hidden = client.checked || defaults.hasCloud;
       recoveryToggle.hidden = client.checked;
       joinCode.el.hidden = client.checked || useRecovery.checked;
       recoveryKey.el.hidden = client.checked || !useRecovery.checked;
@@ -157,6 +169,7 @@ export async function renderSetup(root, { onDone }) {
           h('label.check', primary, h('span', h('strong', t('setup.joinPrimary')), h('div.small.muted', t('setup.joinPrimaryHint')))),
           h('label.check', client, h('span', h('strong', t('setup.joinClient')), h('div.small.muted', t('setup.joinClientHint'))))),
         form.add('orgCode', orgCode),
+        form.add('cloudUrl', cloudUrl),
         form.add('joinCode', joinCode), form.add('recoveryKey', recoveryKey), recoveryToggle,
         form.add('primaryUrl', address), findBtn, found,
         form.add('pairingCode', pairing),

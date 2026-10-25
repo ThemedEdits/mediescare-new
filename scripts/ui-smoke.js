@@ -118,7 +118,7 @@ async function run() {
     await js(`__t.click('.choice', 'Create a new Head Office')`);
     await waitFor(`__t.fieldByLabel('Organisation name')`);
     // Next without the required field shows an inline message instead of moving on.
-    await js(`__t.click('button[type=submit]')`);
+    await js(`__t.fill('Organisation name', ''); __t.click('button[type=submit]')`);
     await waitFor(`__t.q('.field.has-error')`, 'required error');
     await js(`__t.fill('Organisation name', 'Shifa Pharmacy'); __t.fill('Organisation code', 'shifa'); __t.click('button[type=submit]')`);
     await waitFor(`__t.fieldByLabel('Head Office name')`);
@@ -135,7 +135,7 @@ async function run() {
     await waitFor(`__t.text('.page-head h1') === 'Hello, Ayesha'`, 'home greeting');
     await shot('03-home');
     const topbar = await js(`__t.text('.topbar')`);
-    expect(topbar.includes('Shifa Head Office') && topbar.includes('Head Office') && topbar.includes('Super Admin') && topbar.includes('Not set up'), 'top bar shows branch, role, sync state');
+    expect(topbar.includes('Shifa Head Office') && topbar.includes('Head Office') && topbar.includes('Super Admin') && topbar.includes('Sync'), 'top bar shows branch, role, sync state');
     expect(db().prepare('SELECT COUNT(*) AS n FROM roles').get().n === 6, 'six roles in database');
   });
 
@@ -422,14 +422,11 @@ async function run() {
     await setField(`__t.qa('.modal input')[0]`, '100');
     await waitFor(`(__t.text('.modal .pos-paystatus') || '').includes('40.00')`, 'change 40.00');
     await shot('62-pos-pay');
-    await js(`__t.click('.modal .btn.primary', 'Finish sale')`);
-    await waitFor(`__t.q('.pos-change')`, 'sale finished', 10000);
-    expect((await js(`__t.text('.pos-change')`)).includes('40.00'), 'change shown');
-    await shot('63-pos-done');
+    await js(`__t.click('.modal .btn.primary')`);
+    await waitFor(`!__t.q('.backdrop')`, 'payment modal closed', 10000);
     const sale = db().prepare('SELECT * FROM sales ORDER BY created_at DESC LIMIT 1').get();
     expect(sale.total === 6000 && sale.change_given === 4000 && sale.paid === 6000, `sale stored total ${sale.total} change ${sale.change_given}`);
-    await js(`__t.click('.modal .btn.primary', 'Next customer')`);
-    await waitFor(`!__t.q('.backdrop')`);
+    await shot('63-pos-done');
   });
 
   await step('counter: hold a bill and resume it', async () => {

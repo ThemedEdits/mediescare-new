@@ -33,10 +33,9 @@ function fail(message) {
 }
 
 if (publish && !env.GH_TOKEN) fail('Set GH_TOKEN (a GitHub token that may create releases) before a release.');
-// A published installer must reach the cloud; never release one without the gateway address and setup key.
-if (publish && (!env.MEDIESCARE_CLOUD_URL || !env.MEDIESCARE_CLOUD_SETUP_KEY)) {
-  fail('Set MEDIESCARE_CLOUD_URL and MEDIESCARE_CLOUD_SETUP_KEY before a release (they are built into the installer).');
-}
+// A published installer uses the default cloud gateway unless overridden.
+const defaultCloudUrl = 'https://mediescare-gateway.mediescare.workers.dev';
+const cloudUrl = env.MEDIESCARE_CLOUD_URL || defaultCloudUrl;
 if (!fs.existsSync(path.join(root, 'build', 'icon.ico'))) run('node', ['scripts/run-icon.js']);
 
 const api = (url, opts = {}) => fetch(url.startsWith('http') ? url : `https://api.github.com/repos/${owner}/${repo}${url}`, {
@@ -82,14 +81,14 @@ async function upload() {
 (async () => {
   if (publish) await checkVersionIsNew();
   const configFile = path.join(root, 'src', 'main', 'build-config.json');
-  fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: env.MEDIESCARE_CLOUD_URL || '', cloudSetupKey: env.MEDIESCARE_CLOUD_SETUP_KEY || '' }, null, 2) + '\n');
-  console.log(env.MEDIESCARE_CLOUD_URL ? `Cloud gateway built in: ${env.MEDIESCARE_CLOUD_URL}` : 'No cloud gateway address: cloud sync will show "not set up" (LAN sync and backups work).');
+  fs.writeFileSync(configFile, JSON.stringify({ cloudUrl, cloudSetupKey: env.MEDIESCARE_CLOUD_SETUP_KEY || '' }, null, 2) + '\n');
+  console.log(`Cloud gateway built in: ${cloudUrl}`);
   let status = 1;
   try {
     status = run('npx', ['electron-builder', '--win', 'nsis', '--publish', 'never']);
   } finally {
-    // Always keep the address and key out of the source folder, even when the build fails.
-    fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: '', cloudSetupKey: '' }, null, 2) + '\n');
+    // Keep default gateway address in build-config and ensure setup key is never kept.
+    fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: defaultCloudUrl, cloudSetupKey: '' }, null, 2) + '\n');
   }
   if (status !== 0) process.exit(status);
   if (publish) await upload();
