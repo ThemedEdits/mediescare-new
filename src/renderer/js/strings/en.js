@@ -317,6 +317,12 @@ export default {
   'roles.showInactive': 'Show deactivated roles',
   'roles.empty': 'No roles yet',
   'roles.notOwned': 'You can only tick permissions you have yourself.',
+  'roles.searchPlaceholder': 'Search permissions, pages or actions...',
+  'roles.wholePage': 'Whole page access',
+  'roles.pageAccess': 'Page access',
+  'roles.pagesTitle': 'Pages and module actions',
+  'roles.noMatches': 'No permissions found matching "{q}"',
+  'products.onlyHeadOffice': 'Only Head Office can add new medicines and products to the catalog.',
 
   // Settings
   'settings.title': 'Settings',

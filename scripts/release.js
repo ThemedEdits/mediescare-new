@@ -88,7 +88,7 @@ async function upload() {
     status = run('npx', ['electron-builder', '--win', 'nsis', '--publish', 'never']);
   } finally {
     // Keep default gateway address in build-config and ensure setup key is never kept.
-    fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: defaultCloudUrl, cloudSetupKey: '' }, null, 2) + '\n');
+    fs.writeFileSync(configFile, JSON.stringify({ cloudUrl: '', cloudSetupKey: '' }, null, 2) + '\n');
   }
   if (status !== 0) process.exit(status);
   if (publish) await upload();

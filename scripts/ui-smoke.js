@@ -663,7 +663,7 @@ async function run() {
   });
 
   await step('cashier signs in, must change the temporary password, and sees only allowed pages', async () => {
-    await js(`__t.click('.topbar button[aria-label="Sign out"]')`);
+    await js(`__t.click('.topbar .user-chip'); setTimeout(() => { const item = [...document.querySelectorAll('.menu-item')].find(b => b.textContent.includes('Sign out')); if (item) item.click(); }, 50)`);
     await waitFor(`__t.fieldByLabel('Username')`, 'login screen');
     await shot('20-login');
     await js(`__t.fill('Username', 'sara'); __t.fill('Password', 'wrong-one'); __t.click('button[type=submit]')`);
@@ -685,7 +685,7 @@ async function run() {
   });
 
   await step('branch manager cannot sign in on the Head Office computer', async () => {
-    await js(`__t.click('.topbar button[aria-label="Sign out"]')`);
+    await js(`__t.click('.topbar .user-chip'); setTimeout(() => { const item = [...document.querySelectorAll('.menu-item')].find(b => b.textContent.includes('Sign out')); if (item) item.click(); }, 50)`);
     await waitFor(`__t.fieldByLabel('Username')`);
     await js(`__t.fill('Username', 'bilal'); __t.fill('Password', ${JSON.stringify(managerPassword)}); __t.click('button[type=submit]')`);
     await waitFor(`__t.q('.form-error:not([hidden])')`);

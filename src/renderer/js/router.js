@@ -1,6 +1,6 @@
 // Hash routes (#/users, #/audit?recordId=...) and the navigation menu. Only pages the role allows are listed.
 import { t } from './strings/index.js';
-import { canAny } from './state.js';
+import { state, canAny } from './state.js';
 
 // A page module exports render(); some modules hold several pages, picked here by export name.
 const pick = (loader, name) => () => loader().then((m) => ({ render: m[name] }));
@@ -35,7 +35,7 @@ export const ROUTES = [
   { path: 'stock-reports', title: () => t('nav.stockReports'), icon: 'chart', group: 'inventory', perms: ['stock.view'], load: pick(() => import('./pages/stockreports.js'), 'renderStockReports') },
   { path: 'labels', title: () => t('nav.labels'), icon: 'printer', group: 'inventory', perms: ['products.view', 'batches.view'], load: () => import('./pages/labels.js') },
   { path: 'lists', title: () => t('nav.lists'), icon: 'columns', group: 'inventory', perms: ['products.create', 'products.edit'], load: () => import('./pages/lists.js') },
-  { path: 'import', title: () => t('nav.import'), icon: 'upload', group: 'inventory', perms: ['import.create'], load: () => import('./pages/import.js') },
+  { path: 'import', title: () => t('nav.import'), icon: 'download', group: 'inventory', perms: ['import.create'], load: () => import('./pages/import.js') },
 
   // Purchasing
   { path: 'suppliers', title: () => t('nav.suppliers'), icon: 'truck', group: 'purchasing', perms: ['suppliers.view'], load: () => import('./pages/suppliers.js') },
@@ -82,6 +82,10 @@ export const GROUPS = [
 ];
 
 export function allowed(route) {
+  const isPurchasingRoute = route.group === 'purchasing' || ['supplier', 'po', 'grn', 'purchase-return', 'payment'].includes(route.path);
+  if (isPurchasingRoute) {
+    if (state.me && state.me.branch && !state.me.branch.isHeadOffice) return false;
+  }
   return !route.perms || canAny(route.perms);
 }
 

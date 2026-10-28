@@ -7,7 +7,7 @@ import { t } from '../strings/index.js';
 import { call } from '../api.js';
 import { can, state } from '../state.js';
 import { openModal, confirm } from '../ui/modal.js';
-import { Form, fieldText, input, textarea, select, busy } from '../ui/form.js';
+import { Form, fieldText, input, textarea, select, busy, numberInput } from '../ui/form.js';
 import { toast, toastError } from '../ui/toast.js';
 import { productPicker, qtyText, moneyInput, rupees } from '../ui/stockui.js';
 import { menu } from '../ui/popover.js';
@@ -292,10 +292,10 @@ export async function render(page, { navigate }) {
       const unitSel = select(unitOptions, { value: l.unitId, style: { width: '100%', height: '32px' }, 'aria-label': t('pos.unit') });
       unitSel.addEventListener('change', () => changeLine(i, { unitId: unitSel.value, units: Math.max(1, Math.round(l.qty / l.units.find((u) => u.id === unitSel.value).factor) || 1) }));
       const units = Math.round((l.qty / l.factor) * 1000) / 1000;
-      const qty = h('input.input.pos-qty', { type: 'number', min: 0, step: 'any', value: units, style: { width: '100%', height: '32px' }, 'aria-label': t('docs.qty') });
+      const qty = numberInput({ min: 1, step: 'any', value: units, class: 'pos-qty', style: { width: '100%', height: '32px' }, 'aria-label': t('docs.qty') });
       qty.addEventListener('change', () => changeLine(i, { units: Number(qty.value) || 0 }));
       qty.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); qty.blur(); focusSearch(); } });
-      const disc = h('input.input', { type: 'number', min: 0, max: 100, step: '0.01', value: l.discount, placeholder: '0', style: { width: '100%', height: '32px', textAlign: 'right' }, 'aria-label': t('pos.discPct') });
+      const disc = numberInput({ min: 0, max: 100, step: '0.01', value: l.discount, placeholder: '0', style: { width: '100%', height: '32px', textAlign: 'right' }, 'aria-label': t('pos.discPct') });
       disc.addEventListener('change', () => { l.discount = disc.value; redraw(); });
       // Anyone may open this to add dosage instructions; a changed price is checked by the main process (manager if needed).
       const priceCell = h('button.btn.ghost.sm.pos-price-btn', { type: 'button', style: { width: '100%', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 6px' }, title: t('pos.changePrice'), onclick: () => overridePrice(i) },
@@ -338,7 +338,7 @@ export async function render(page, { navigate }) {
   }
 
   function drawTotals(est = estimate()) {
-    const discInput = h('input.input', { type: 'number', min: 0, step: '0.01', value: cart.billDiscount, placeholder: '0', style: { width: '90px', textAlign: 'right' }, id: 'pos-bill-discount', 'aria-label': t('pos.billDiscount') });
+    const discInput = numberInput({ min: 0, step: '0.01', value: cart.billDiscount, placeholder: '0', style: { width: '105px', textAlign: 'right' }, id: 'pos-bill-discount', 'aria-label': t('pos.billDiscount') });
     const typeSel = select([
       { value: 'percent', label: '%' },
       { value: 'amount', label: 'Rs' },
@@ -578,11 +578,10 @@ export async function render(page, { navigate }) {
 
   async function done(res, shouldPrint = false) {
     lastSaleId = res.id;
-    toast(t('pos.saleCompleted', { bill: res.docNo }), { type: 'success', title: t('pos.saleTitle') });
     newBill(false);
     pushDisplay({ nets: [], total: res.total }, res.change, t('pos.thanks'));
     let printed = false;
-    if (shouldPrint || res.autoPrint) {
+    if (shouldPrint) {
       try {
         await call('sales.print', { id: res.id });
         printed = true;
@@ -593,7 +592,7 @@ export async function render(page, { navigate }) {
     const msg = printed
       ? t('pos.saleDoneToastPrinted', { doc: res.docNo, change: fmt.money(res.change) })
       : t('pos.saleDoneToast', { doc: res.docNo, change: fmt.money(res.change) });
-    toast(msg);
+    toast(msg, { type: 'success', title: t('pos.saleTitle') });
     loadShift();
     focusSearch();
   }

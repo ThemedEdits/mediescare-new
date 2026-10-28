@@ -5,11 +5,12 @@ import { t } from './strings/index.js';
 import { state, can } from './state.js';
 import { call } from './api.js';
 import { ROUTES, GROUPS, PARENT, allowed, parseHash, navigate, findRoute } from './router.js';
-import { popover, menu, closePopover } from './ui/popover.js';
+import { popover, menu, closePopover, isPopoverOpen } from './ui/popover.js';
 import { relative, money } from './ui/format.js';
 import { openModal } from './ui/modal.js';
 import { toast, toastError } from './ui/toast.js';
 import { keyFor } from './keys.js';
+import { updateWindowTitle, recordNav } from './nav-history.js';
 
 let mainEl = null;
 let navEl = null;
@@ -44,6 +45,7 @@ function paintBell() {
 }
 
 async function showNotifications(anchor) {
+  if (isPopoverOpen(anchor)) { closePopover(); return; }
   await refreshBell();
   const list = notes.items.length
     ? h('div.notif-list', ...notes.items.map((n) => h('a.notif', {
@@ -68,6 +70,7 @@ async function refreshUpdate() {
   updateChip.replaceChildren(icon('download', 'sm'), h('span.two-line', h('span.label', t('update.chipLabel')),
     h('span.value', st.state === 'ready' ? t('update.chipReady', { v: st.available }) : t('update.chipDownloading', { p: st.progress || 0 }))));
   updateChip.onclick = () => {
+    if (isPopoverOpen(updateChip)) { closePopover(); return; }
     const install = can('settings.edit') && st.state === 'ready' ? h('button.btn.primary.sm', { type: 'button', onclick: async () => {
       closePopover();
       try { await call('update.install'); toast(t('help.installing')); } catch (err) { toastError(err); }
@@ -98,6 +101,7 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
     branch.isHeadOffice ? h('span.badge.accent', t('common.headOffice')) : null,
     can('branch.switch') ? icon('chevronDown', 'sm') : null);
   branchChip.addEventListener('click', async () => {
+    if (isPopoverOpen(branchChip)) { closePopover(); return; }
     if (!can('branch.switch')) return;
     try {
       const branches = await call('branches.list', {});
@@ -122,6 +126,7 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
   syncChip = h('button.top-chip', { type: 'button', 'aria-label': t('shell.syncTitle'), id: 'sync-chip' });
   let lastStatus = null;
   syncChip.addEventListener('click', () => {
+    if (isPopoverOpen(syncChip)) { closePopover(); return; }
     const s = lastStatus;
     const line = (name, ch) => h('div.row', h('span.dot', { class: SYNC_DOT[ch.state] || '' }), h('strong', name), h('span.small.muted', t(`syncState.${ch.state}`)),
       h('span.spacer'), ch.pending ? h('span.small', t('shell.syncPending', { n: ch.pending })) : null);
@@ -165,13 +170,11 @@ export function renderShell(root, { onSignOut, onSessionChange }) {
     { iconEl: icon('logout', 'sm'), label: t('shell.signOut'), danger: true, onClick: onSignOut },
   ], { align: 'right' }));
 
-  const signOutBtn = h('button.btn.ghost.icon-only', { type: 'button', 'aria-label': t('shell.signOut'), title: t('shell.signOut'), onclick: onSignOut }, icon('logout'));
-
   const searchBtn = h('button.search-trigger', { type: 'button', onclick: openPalette }, icon('search', 'sm'), h('span', t('shell.searchPlaceholder')), h('span.kbd', keyFor('global.search') || 'Ctrl+K'));
   const toggleNav = h('button.btn.ghost.icon-only.toggle-nav-btn', { type: 'button', 'aria-label': t('shell.collapse') }, icon('sidebar'));
 
   const actions = h('div.topbar-actions',
-    branchChip, h('span.top-divider'), syncChip, updateChip, h('span.top-divider'), bell, userChip, signOutBtn);
+    branchChip, h('span.top-divider'), syncChip, updateChip, h('span.top-divider'), bell, userChip);
 
   const topbar = h('header.topbar',
     h('div.brand', h('img', { src: 'assets/mediescare-icon.svg', alt: '' }), h('span.brand-name', t('app.name'))),
@@ -281,6 +284,8 @@ export async function route() {
   const token = ++renderToken;
   mount(mainEl, h('div.loading', h('span.spinner'), t('common.loading')));
   document.title = r.title();
+  updateWindowTitle(r.title());
+  recordNav(location.hash);
   try {
     const mod = await r.load();
     if (token !== renderToken || !mainEl) return;
@@ -301,14 +306,15 @@ export async function route() {
 let reportCatalog = null;
 export function openPalette() {
   if (!state.me) return;
+  const isHeadOffice = !state.me || !state.me.branch || state.me.branch.isHeadOffice;
   const entries = [
     ...ROUTES.filter((r) => allowed(r) && (r.group || r.path === 'profile' || r.path === 'shortcuts')).map((r) => ({ group: t('shell.groupPages'), label: r.title(), icon: r.icon || 'arrowRight', run: () => navigate(r.path) })),
     can('users.create') && { group: t('shell.groupActions'), label: t('users.add'), icon: 'plus', run: () => navigate('users', { new: '1' }) },
     can('branches.create') && { group: t('shell.groupActions'), label: t('branches.add'), icon: 'plus', run: () => navigate('branches', { new: '1' }) },
     can('roles.create') && { group: t('shell.groupActions'), label: t('roles.add'), icon: 'plus', run: () => navigate('roles', { new: '1' }) },
-    can('products.create') && { group: t('shell.groupActions'), label: t('products.add'), icon: 'plus', run: () => navigate('products', { new: '1' }) },
-    can('purchases.create') && can('cost.view') && { group: t('shell.groupActions'), label: t('grn.new'), icon: 'download', run: () => navigate('grn', { new: '1' }) },
-    can('purchases.create') && can('cost.view') && { group: t('shell.groupActions'), label: t('po.new'), icon: 'clipboard', run: () => navigate('po', { new: '1' }) },
+    isHeadOffice && can('products.create') && { group: t('shell.groupActions'), label: t('products.add'), icon: 'plus', run: () => navigate('products', { new: '1' }) },
+    isHeadOffice && can('purchases.create') && can('cost.view') && { group: t('shell.groupActions'), label: t('grn.new'), icon: 'download', run: () => navigate('grn', { new: '1' }) },
+    isHeadOffice && can('purchases.create') && can('cost.view') && { group: t('shell.groupActions'), label: t('po.new'), icon: 'clipboard', run: () => navigate('po', { new: '1' }) },
     can('stock.create') && { group: t('shell.groupActions'), label: t('adjustments.add'), icon: 'clipboard', run: () => navigate('adjustments') },
     can('transfers.create') && { group: t('shell.groupActions'), label: t('transfers.send'), icon: 'truck', run: () => navigate('transfers') },
     can('expenses.create') && { group: t('shell.groupActions'), label: t('expenses.add'), icon: 'wallet', run: () => navigate('expenses', { new: '1' }) },

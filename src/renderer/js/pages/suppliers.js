@@ -13,7 +13,7 @@ import * as fmt from '../ui/format.js';
 
 export async function render(page, { params, navigate }) {
   const add = can('suppliers.create') ? h('button.btn.primary', { type: 'button', onclick: () => supplierForm(null, (s) => navigate('supplier', { id: s.id })) }, icon('plus', 'sm'), t('suppliers.add')) : null;
-  const importBtn = can('import.create') && can('suppliers.create') ? h('a.btn', { href: '#/import?kind=suppliers' }, icon('upload', 'sm'), t('import.title')) : null;
+  const importBtn = can('import.create') && can('suppliers.create') ? h('a.btn', { href: '#/import?kind=suppliers' }, icon('download', 'sm'), t('import.title')) : null;
   const filter = { includeInactive: false };
   page.append(h('div.page-head', h('div', h('h1', t('suppliers.title')), h('p.sub', t('suppliers.sub'))), h('div.row', importBtn,
     exportButton({ source: 'suppliers.list', title: t('suppliers.title'), perm: 'suppliers.export', getParams: () => ({ ...filter }), columns: [

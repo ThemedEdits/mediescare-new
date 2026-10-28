@@ -104,3 +104,65 @@ test('branch staff only see their branch; the owner can choose', async () => {
   assert.equal(all.branchName, 'All branches');
   app.close();
 });
+
+test('branch admin acts as secondary super admin: can edit lower roles but not super admin or branch admin', async () => {
+  const { app, owner, users } = await world();
+  const branchAdmin = users['Branch Admin'].c;
+
+  // Branch Admin can list roles and catalog
+  const list = await branchAdmin.call('roles.list', {});
+  const superRole = list.find((r) => r.isSuper);
+  const branchAdminRole = list.find((r) => r.name === 'Branch Admin');
+  const cashierRole = list.find((r) => r.name === 'Cashier');
+
+  assert.equal(superRole.canManage, false, 'Super Admin cannot be managed by Branch Admin');
+  assert.equal(branchAdminRole.canManage, false, 'Branch Admin cannot be managed by Branch Admin');
+  assert.equal(cashierRole.canManage, true, 'Cashier can be managed by Branch Admin');
+
+  // Branch Admin CANNOT update Super Admin
+  const superErr = await branchAdmin.fail('roles.update', { id: superRole.id, name: 'Hacked Super', permissions: [] });
+  assert.equal(superErr.code, 'FORBIDDEN');
+
+  // Branch Admin CANNOT update Branch Admin role
+  const baErr = await branchAdmin.fail('roles.update', { id: branchAdminRole.id, name: 'Hacked Branch Admin', permissions: [] });
+  assert.equal(baErr.code, 'FORBIDDEN');
+
+  // Branch Admin CAN update lower role (Cashier)
+  const updatedCashier = await branchAdmin.call('roles.update', {
+    id: cashierRole.id,
+    name: 'Cashier',
+    description: cashierRole.description,
+    permissions: [...cashierRole.permissions, 'pos.view'],
+  });
+  assert.ok(updatedCashier.permissions.includes('pos.view'));
+
+  // Branch Admin CAN create a custom role with permissions it owns
+  const custom = await branchAdmin.call('roles.create', {
+    name: 'Junior Dispenser',
+    description: 'Helps dispensing',
+    permissions: ['pos.view', 'products.view'],
+  });
+  assert.equal(custom.name, 'Junior Dispenser');
+
+  // Branch Admin CANNOT create a role with permissions it does NOT have (e.g. branches.create)
+  const leakErr = await branchAdmin.fail('roles.create', {
+    name: 'Rogue Admin',
+    permissions: ['branches.create'],
+  });
+  assert.equal(leakErr.code, 'FORBIDDEN');
+
+  // Non-head-office branch check for products.create
+  const { branch: lhr, admin } = await owner.call('branches.create', { code: 'LHR2', name: 'Lahore 2', admin: { fullName: 'Lahore manager 2', username: 'lhrmgr2' } });
+  app.db.prepare('UPDATE sync_ctx SET applying = 1').run();
+  app.db.prepare('UPDATE devices SET branch_id = ? WHERE id = ?').run(lhr.id, app.device.id);
+  app.db.prepare('UPDATE sync_ctx SET applying = 0').run();
+  app.loadDevice();
+  const { c: lhrMgr } = await signIn(app, 'lhrmgr2', admin.temporaryPassword);
+  await lhrMgr.call('auth.changePassword', { currentPassword: admin.temporaryPassword, newPassword: 'Secret#123', confirmPassword: 'Secret#123' });
+
+  // Branch Manager cannot create product directly (head office only)
+  const prodErr = await lhrMgr.fail('products.create', { brandName: 'Direct Tablet', strength: '10mg', baseUnit: 'Tab', mrp: '10' });
+  assert.equal(prodErr.code, 'FORBIDDEN');
+
+  app.close();
+});

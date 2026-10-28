@@ -5,9 +5,11 @@
 let built = {};
 try { built = require('./build-config.json'); } catch (_) { built = {}; }
 
+const isOffline = process.env.MEDIESCARE_OFFLINE === '1' || process.env.MEDIESCARE_CLOUD_URL === 'none' || process.env.MEDIESCARE_CLOUD_URL === 'off';
+
 module.exports = {
-  cloudUrl: process.env.MEDIESCARE_CLOUD_URL !== undefined ? process.env.MEDIESCARE_CLOUD_URL : (built.cloudUrl || ''),
+  cloudUrl: isOffline ? '' : (process.env.MEDIESCARE_CLOUD_URL !== undefined ? process.env.MEDIESCARE_CLOUD_URL : (built.cloudUrl || '')),
   // Optional key the gateway asks for when a new organisation registers (set the same value on the gateway).
-  cloudSetupKey: process.env.MEDIESCARE_CLOUD_SETUP_KEY !== undefined ? process.env.MEDIESCARE_CLOUD_SETUP_KEY : (built.cloudSetupKey || ''),
+  cloudSetupKey: isOffline ? '' : (process.env.MEDIESCARE_CLOUD_SETUP_KEY !== undefined ? process.env.MEDIESCARE_CLOUD_SETUP_KEY : (built.cloudSetupKey || '')),
   lanPort: Number(process.env.MEDIESCARE_LAN_PORT) || 47800,
 };

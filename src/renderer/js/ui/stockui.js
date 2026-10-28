@@ -9,6 +9,9 @@ import { menu } from './popover.js';
 import { toast, toastError } from './toast.js';
 import * as fmt from './format.js';
 import { select } from './form.js';
+import { numberInput } from './custom-stepper.js';
+
+export { numberInput };
 
 // ---- quantities ----------------------------------------------------------------------------------------------------
 
@@ -38,8 +41,8 @@ export function qtyText(qty, p) {
 // Two small inputs: packs and loose units. getValue() returns base units.
 export function qtyInput(product, { value = 0, onChange, autofocus = false } = {}) {
   const pack = product.packSize || 1;
-  const packs = h('input.input', { type: 'number', min: 0, step: 1, value: pack > 1 ? Math.floor(value / pack) || '' : value || '', style: { width: '76px' }, 'aria-label': product.packUnit || 'Packs', autofocus });
-  const loose = h('input.input', { type: 'number', min: 0, step: 1, value: pack > 1 ? value % pack || '' : '', style: { width: '64px' }, 'aria-label': product.baseUnit || 'Loose' });
+  const packs = numberInput({ min: 0, step: 1, value: pack > 1 ? Math.floor(value / pack) || '' : value || '', style: { width: '82px' }, 'aria-label': product.packUnit || 'Packs', autofocus });
+  const loose = numberInput({ min: 0, step: 1, value: pack > 1 ? value % pack || '' : '', style: { width: '74px' }, 'aria-label': product.baseUnit || 'Loose' });
   const wrap = h('div.row.qty-input', packs, h('span.small.muted', pack > 1 ? product.packUnit : product.baseUnit));
   if (pack > 1) wrap.append(loose, h('span.small.muted', product.baseUnit));
   const get = () => (Number(packs.value) || 0) * (pack > 1 ? pack : 1) + (pack > 1 ? Number(loose.value) || 0 : 0);
@@ -160,9 +163,9 @@ const EXPORT_FORMATS = ['xlsx', 'csv', 'pdf', 'xls', 'txt', 'json', 'xml'];
 // A button that exports what a list shows. getParams returns the current filters.
 export function exportButton({ source, title, columns, getParams, perm }) {
   if (perm && !can(perm)) return null;
-  const btn = h('button.btn', { type: 'button' }, icon('download', 'sm'), t('common.export'));
+  const btn = h('button.btn', { type: 'button' }, icon('upload', 'sm'), t('common.export'));
   btn.addEventListener('click', () => menu(btn, EXPORT_FORMATS.map((format) => ({
-    iconEl: icon('download', 'sm'), label: `${t('audit.exportAs')} ${format.toUpperCase()}`,
+    iconEl: icon('upload', 'sm'), label: `${t('audit.exportAs')} ${format.toUpperCase()}`,
     onClick: async () => {
       try {
         const res = await call('export.run', { source, title: typeof title === 'function' ? title() : title, format, columns: typeof columns === 'function' ? columns() : columns, params: getParams ? getParams() : {} });

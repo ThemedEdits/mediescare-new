@@ -117,7 +117,15 @@ if (!electronApp.requestSingleInstanceLock()) {
     displayWindow.webContents.send('display', data);
   }
 
+  function getOverlayTheme(theme) {
+    if (theme === 'dark') {
+      return { color: '#1b1f23', symbolColor: '#e6e9ec', height: 40 };
+    }
+    return { color: '#ffffff', symbolColor: '#1c2024', height: 40 };
+  }
+
   function createWindow() {
+    const isWindows = process.platform === 'win32';
     mainWindow = new BrowserWindow({
       width: 1366,
       height: 840,
@@ -128,6 +136,8 @@ if (!electronApp.requestSingleInstanceLock()) {
       title: 'Mediescare',
       icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
       autoHideMenuBar: true,
+      titleBarStyle: isWindows ? 'hidden' : 'default',
+      titleBarOverlay: isWindows ? getOverlayTheme('light') : false,
       webPreferences: {
         preload: path.join(__dirname, '..', 'preload', 'preload.js'),
         contextIsolation: true,
@@ -225,6 +235,14 @@ if (!electronApp.requestSingleInstanceLock()) {
       const method = message && typeof message.method === 'string' ? message.method : '';
       const params = message && typeof message.params === 'object' && message.params !== null ? message.params : {};
       return rpc.call(core, `wc-${event.sender.id}`, method, params);
+    });
+
+    ipcMain.on('theme:change', (event, theme) => {
+      if (mainWindow && !mainWindow.isDestroyed() && process.platform === 'win32') {
+        try {
+          mainWindow.setTitleBarOverlay(getOverlayTheme(theme));
+        } catch (_) { /* ignore if not supported */ }
+      }
     });
 
     createWindow();

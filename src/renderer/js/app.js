@@ -6,6 +6,7 @@ import { loadShortcuts, actionFor } from './keys.js';
 import { navigate, findRoute, allowed } from './router.js';
 import { toast } from './ui/toast.js';
 import { t } from './strings/index.js';
+import { initNavHistory } from './nav-history.js';
 
 const root = document.getElementById('root');
 let shellActive = false;
@@ -80,6 +81,16 @@ window.addEventListener('mediescare:me', (e) => {
   if (shellActive) showShell();
 });
 
+// System color scheme change (when user selects Same as Windows)
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    const prefs = (state.me && state.me.user.prefs) || {};
+    if (!prefs.theme || prefs.theme === 'system') {
+      applyPrefs();
+    }
+  });
+}
+
 // Activity keeps the session alive; the main process signs out idle sessions.
 function activity() {
   if (!shellActive || Date.now() - lastPing < 60000) return;
@@ -118,4 +129,5 @@ window.addEventListener('unhandledrejection', (e) => {
   toast(t('error.generic'), { type: 'error' });
 });
 
+initNavHistory();
 start();

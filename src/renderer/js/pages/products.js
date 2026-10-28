@@ -3,7 +3,7 @@ import { h } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { t } from '../strings/index.js';
 import { call } from '../api.js';
-import { can } from '../state.js';
+import { state, can } from '../state.js';
 import { dataTable } from '../ui/table.js';
 import { openModal } from '../ui/modal.js';
 import { Form, fieldText, input, textarea, checkbox, busy } from '../ui/form.js';
@@ -16,8 +16,9 @@ export async function render(page, { params, navigate }) {
   const lists = await call('lookups.all');
   const filter = { categoryId: '', manufacturerId: '', status: 'active', stockStatus: params.stock || '', rx: '' };
 
-  const addBtn = can('products.create') ? h('button.btn.primary', { type: 'button', onclick: () => openProductForm(null, { lists, onSaved: (p) => navigate('product', { id: p.id }) }) }, icon('plus', 'sm'), t('products.add')) : null;
-  const importBtn = can('import.create') ? h('a.btn', { href: '#/import?kind=products' }, icon('upload', 'sm'), t('import.title')) : null;
+  const isHeadOffice = !state.me || !state.me.branch || state.me.branch.isHeadOffice;
+  const addBtn = (can('products.create') && isHeadOffice) ? h('button.btn.primary', { type: 'button', onclick: () => openProductForm(null, { lists, onSaved: (p) => navigate('product', { id: p.id }) }) }, icon('plus', 'sm'), t('products.add')) : null;
+  const importBtn = (can('import.create') && isHeadOffice) ? h('a.btn', { href: '#/import?kind=products' }, icon('download', 'sm'), t('import.title')) : null;
   const columns = [
     { key: 'sku', label: t('products.sku'), width: '120px', render: (p) => h('span.mono', p.sku), hidden: true },
     { key: 'brandName', label: t('products.name'), render: (p) => h('div', h('div.cell-main.row', p.label, p.rxRequired ? h('span.badge.warning', p.controlled ? t('products.controlledShort') : t('products.rxShort')) : null, !p.active ? h('span.badge', t('common.inactive')) : null), h('div.cell-sub', [p.genericName, p.formName].filter(Boolean).join(' - '))) },
@@ -61,7 +62,7 @@ export async function render(page, { params, navigate }) {
   });
   page.append(table.el);
   function reload() { table.resetPage(); table.refresh(); }
-  if (params.new && can('products.create')) { history.replaceState(null, '', '#/products'); addBtn.click(); }
+  if (params.new && can('products.create') && addBtn) { history.replaceState(null, '', '#/products'); addBtn.click(); }
 }
 
 // Product form, used for add and edit. `p` is the product detail on edit.
@@ -176,7 +177,8 @@ export function openProductForm(p, { lists, onSaved }) {
         Object.assign(lists, fresh);
       } catch (_) {}
       m.close();
-      toast(isNew ? t('products.createdSuccess', { name: saved.name }) : t('products.updatedSuccess', { name: saved.name }), {
+      const prodName = saved.label || saved.brandName || values.brandName || t('nav.product');
+      toast(isNew ? t('products.createdSuccess', { name: prodName }) : t('products.updatedSuccess', { name: prodName }), {
         type: 'success',
         title: isNew ? t('products.addedTitle') : t('products.updatedTitle'),
       });

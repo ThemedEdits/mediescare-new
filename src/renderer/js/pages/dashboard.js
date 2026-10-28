@@ -2,6 +2,7 @@
 // All branches (Head Office): one row per branch with drill-down into that branch's dashboard.
 import { h, mount } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
+import { statIcon } from '../ui/stat-icons.js';
 import { t } from '../strings/index.js';
 import { call } from '../api.js';
 import { state, can } from '../state.js';
@@ -12,15 +13,22 @@ import * as fmt from '../ui/format.js';
 
 const go = (navigate, path, params) => () => navigate(path, params);
 
-function tile({ label, value, sub, onClick, tone, iconName }) {
+function tile({ label, value, sub, onClick, tone, iconName, trendIcon, customIcon }) {
   const tag = onClick ? 'button.stat' : 'div.stat';
   return h(tag, { type: onClick ? 'button' : null, class: tone || '', onclick: onClick || null },
     h('div.stat-header',
-      h('span.stat-label', label),
-      iconName ? h('span.stat-icon', icon(iconName, 'sm')) : null
+      customIcon || (iconName ? h('span.stat-icon', icon(iconName, 'sm')) : null)
     ),
+    h('span.stat-label', label),
     h('span.stat-value', value),
-    sub ? h('span.stat-sub', sub) : null
+    sub ? h('span.stat-sub', trendIcon ? icon(trendIcon, 'sm') : null, h('span', sub)) : null,
+    h('div.stat-bars', { 'aria-hidden': 'true' },
+      h('span.stat-bar', { style: { height: '66%' } }),
+      h('span.stat-bar', { style: { height: '82%' } }),
+      h('span.stat-bar', { style: { height: '54%' } }),
+      h('span.stat-bar', { style: { height: '38%' } }),
+      h('span.stat-bar', { style: { height: '50%' } })
+    )
   );
 }
 
@@ -51,37 +59,67 @@ export async function render(page, { params, navigate }) {
     const sales = (extra) => (own && can('sales.view') ? go(navigate, 'sales', { ...day, ...extra }) : null);
     const journal = (kind) => (own && can('finance.view') ? go(navigate, 'finance', { ...day, kind }) : null);
     const diff = today.net - d.yesterday.net;
+    const profitDiff = (today.profit !== null && d.yesterday && d.yesterday.profit !== null)
+      ? (today.profit - d.yesterday.profit)
+      : null;
+    const hasSpecificCats = can('dashboard.stats_financial') || can('dashboard.stats_payments') || can('dashboard.stats_inventory') || can('dashboard.stats_balances') || can('dashboard.charts');
+    const showFinancial = can('dashboard.stats_financial') || !hasSpecificCats;
+    const showPayments = can('dashboard.stats_payments') || !hasSpecificCats;
+    const showInventory = can('dashboard.stats_inventory') || !hasSpecificCats;
+    const showBalances = can('dashboard.stats_balances') || !hasSpecificCats;
+    const showCharts = can('dashboard.charts') || !hasSpecificCats;
+
     // Category 1: Today's Financial Overview (highlighted Net Sales in bluish, Net Profit in greenish)
-    const financialTiles = [
-      tile({ label: t('dash.salesToday'), value: fmt.money(today.net), sub: t('dash.vsYesterday', { v: `${diff >= 0 ? '+' : ''}${fmt.money(diff)}` }), onClick: sales({}), iconName: 'receipt', tone: 'blue' }),
-      today.profit !== null ? tile({ label: t('dash.profit'), value: fmt.money(today.profit), onClick: can('reports.financial') ? go(navigate, 'report', { key: 'gross_profit', ...day }) : null, iconName: 'shield', tone: 'green' }) : null,
-      tile({ label: t('dash.bills'), value: String(today.bills), sub: t('dash.average', { v: fmt.money(today.average) }), onClick: sales({}), iconName: 'clipboard' }),
-      tile({ label: t('dash.expenses'), value: fmt.money(today.expenses.total), sub: t('dash.count', { n: today.expenses.count }), onClick: own && can('expenses.view') ? go(navigate, 'expenses', day) : null, iconName: 'wallet' }),
-    ].filter(Boolean);
+    const financialTiles = showFinancial ? [
+      tile({
+        label: t('dash.salesToday'),
+        value: fmt.money(today.net),
+        sub: t('dash.vsYesterday', { v: `${diff >= 0 ? '+' : ''}${fmt.money(diff)}` }),
+        trendIcon: diff >= 0 ? 'trendingUp' : 'trendingDown',
+        onClick: sales({}),
+        customIcon: statIcon('netSalesToday'),
+        tone: 'blue',
+      }),
+      today.profit !== null ? tile({
+        label: t('dash.profit'),
+        value: fmt.money(today.profit),
+        sub: profitDiff !== null ? t('dash.vsYesterday', { v: `${profitDiff >= 0 ? '+' : ''}${fmt.money(profitDiff)}` }) : null,
+        trendIcon: profitDiff !== null ? (profitDiff >= 0 ? 'trendingUp' : 'trendingDown') : null,
+        onClick: can('reports.financial') ? go(navigate, 'report', { key: 'gross_profit', ...day }) : null,
+        customIcon: statIcon('grossProfit'),
+        tone: 'green',
+      }) : null,
+      tile({ label: t('dash.bills'), value: String(today.bills), sub: t('dash.average', { v: fmt.money(today.average) }), onClick: sales({}), customIcon: statIcon('bills'), tone: 'indigo' }),
+      tile({ label: t('dash.expenses'), value: fmt.money(today.expenses.total), sub: t('dash.count', { n: today.expenses.count }), onClick: own && can('expenses.view') ? go(navigate, 'expenses', day) : null, customIcon: statIcon('expenses'), tone: 'purple' }),
+    ].filter(Boolean) : [];
 
     // Category 2: Payments & Cashflow
-    const paymentTiles = [
-      tile({ label: t('dash.cashSales'), value: fmt.money(today.cash), onClick: sales({ method: 'cash' }), iconName: 'wallet' }),
-      tile({ label: t('dash.cardOnline'), value: fmt.money(today.card + today.online), sub: t('dash.onlineSub'), onClick: sales({}), iconName: 'monitor' }),
-      tile({ label: t('dash.collections'), value: fmt.money(today.collections.total), sub: t('dash.count', { n: today.collections.count }), onClick: journal('receipt'), iconName: 'users' }),
-      tile({ label: t('dash.returns'), value: fmt.money(today.returns.total), sub: t('dash.count', { n: today.returns.count }), onClick: journal('sale_return'), tone: today.returns.total ? 'warn' : '', iconName: 'refresh' }),
-    ].filter(Boolean);
+    const paymentTiles = showPayments ? [
+      tile({ label: t('dash.cashSales'), value: fmt.money(today.cash), onClick: sales({ method: 'cash' }), customIcon: statIcon('cashSales'), tone: 'emerald' }),
+      tile({ label: t('dash.cardOnline'), value: fmt.money(today.card + today.online), sub: t('dash.onlineSub'), onClick: sales({}), customIcon: statIcon('cardOnline'), tone: 'cyan' }),
+      tile({ label: t('dash.collections'), value: fmt.money(today.collections.total), sub: t('dash.count', { n: today.collections.count }), onClick: journal('receipt'), iconName: 'users', tone: 'teal' }),
+      tile({ label: t('dash.returns'), value: fmt.money(today.returns.total), sub: t('dash.count', { n: today.returns.count }), onClick: journal('sale_return'), tone: today.returns.total ? 'warn' : 'slate', iconName: 'refresh' }),
+    ].filter(Boolean) : [];
 
     // Category 3: Inventory Alerts
-    const inventoryTiles = [
-      tile({ label: t('dash.lowStock'), value: String(d.stock.low + d.stock.out), sub: t('dash.outOfStock', { n: d.stock.out }), tone: d.stock.out ? 'bad' : d.stock.low ? 'warn' : '', onClick: own ? go(navigate, 'reorder') : null, iconName: 'box' }),
-      tile({ label: t('dash.nearExpiry'), value: String(d.expiry.near), sub: t('dash.withinDays', { n: d.expiry.nearDays }), tone: d.expiry.near ? 'warn' : '', onClick: own ? go(navigate, 'batches', { status: 'near' }) : null, iconName: 'layers' }),
-      tile({ label: t('dash.expired'), value: String(d.expiry.expired), sub: t('dash.expiredSub'), tone: d.expiry.expired ? 'bad' : '', onClick: own ? go(navigate, 'batches', { status: 'expired' }) : null, iconName: 'trash' }),
-    ].filter(Boolean);
+    const inventoryTiles = showInventory ? [
+      tile({ label: t('dash.lowStock'), value: String(d.stock.low + d.stock.out), sub: t('dash.outOfStock', { n: d.stock.out }), tone: d.stock.out ? 'bad' : d.stock.low ? 'warn' : 'amber', onClick: own ? go(navigate, 'reorder') : null, customIcon: statIcon('lowStock') }),
+      tile({ label: t('dash.nearExpiry'), value: String(d.expiry.near), sub: t('dash.withinDays', { n: d.expiry.nearDays }), tone: d.expiry.near ? 'warn' : 'amber', onClick: own ? go(navigate, 'batches', { status: 'near' }) : null, customIcon: statIcon('expiringSoon') }),
+      tile({ label: t('dash.expired'), value: String(d.expiry.expired), sub: t('dash.expiredSub'), tone: d.expiry.expired ? 'bad' : 'slate', onClick: own ? go(navigate, 'batches', { status: 'expired' }) : null, iconName: 'trash' }),
+    ].filter(Boolean) : [];
 
     // Category 4: Balances & Approvals
-    const actionTiles = [
-      tile({ label: t('dash.approvals'), value: String(d.pendingApprovals), sub: t('dash.approvalsSub'), tone: d.pendingApprovals ? 'warn' : '', onClick: own && (can('approvals.view') || can('approvals.approve')) ? go(navigate, 'approvals') : null, iconName: 'check' }),
-      d.balances ? tile({ label: t('dash.receivable'), value: fmt.money(d.balances.receivable), sub: d.overdueCustomers.n ? t('dash.overdueBills', { n: d.overdueCustomers.n }) : t('dash.noneOverdue'),
-        tone: d.overdueCustomers.n ? 'warn' : '', onClick: go(navigate, 'report', { key: 'receivables', branchId }), iconName: 'users' }) : null,
-      d.balances ? tile({ label: t('dash.payable'), value: fmt.money(d.balances.payable), sub: d.overdueSuppliers.n ? t('dash.overdueBills', { n: d.overdueSuppliers.n }) : t('dash.noneOverdue'),
-        tone: d.overdueSuppliers.n ? 'warn' : '', onClick: own && can('supplier_payments.view') ? go(navigate, 'payments') : null, iconName: 'truck' }) : null,
-    ].filter(Boolean);
+    const actionTiles = showBalances ? [
+      tile({ label: t('dash.approvals'), value: String(d.pendingApprovals), sub: t('dash.approvalsSub'), tone: d.pendingApprovals ? 'warn' : 'blue', onClick: own && (can('approvals.view') || can('approvals.approve')) ? go(navigate, 'approvals') : null, customIcon: statIcon('waitingApproval') }),
+      d.balances ? tile({
+        label: t('dash.receivable'), value: fmt.money(d.balances.receivable), sub: d.overdueCustomers.n ? t('dash.overdueBills', { n: d.overdueCustomers.n }) : t('dash.noneOverdue'),
+        tone: d.overdueCustomers.n ? 'warn' : 'indigo', onClick: go(navigate, 'report', { key: 'receivables', branchId }), iconName: 'users'
+      }) : null,
+      d.balances ? tile({
+        label: t('dash.payable'), value: fmt.money(d.balances.payable), sub: d.overdueSuppliers.n ? t('dash.overdueBills', { n: d.overdueSuppliers.n }) : t('dash.noneOverdue'),
+        tone: d.overdueSuppliers.n ? 'warn' : 'purple', onClick: own && can('supplier_payments.view') ? go(navigate, 'payments') : null, customIcon: statIcon('weOweSuppliers')
+      }) : null,
+    ].filter(Boolean) : [];
 
     const trendPoints = d.trend.map((p) => ({ label: shortDay(p.day), title: fmt.date(p.day), values: [p.net], day: p.day }));
     const trend = chartCard({
@@ -97,8 +135,12 @@ export async function render(page, { params, navigate }) {
     });
     const cats = chartCard({
       title: t('dash.categories'), sub: t('dash.last30'),
-      chart: d.categories.length ? barChart({ items: d.categories.map((c) => ({ label: c.name, value: c.net, valueText: `${c.share}%`, sub: fmt.money(c.net),
-        onClick: own && can('reports.view') && c.id && c.id !== 'other' ? () => navigate('report', { key: 'sales_by_product', categoryId: c.id, from: d.from30, to: d.today }) : null })), format: (v) => fmt.money(v), label: t('dash.categories') })
+      chart: d.categories.length ? barChart({
+        items: d.categories.map((c) => ({
+          label: c.name, value: c.net, valueText: `${c.share}%`, sub: fmt.money(c.net),
+          onClick: own && can('reports.view') && c.id && c.id !== 'other' ? () => navigate('report', { key: 'sales_by_product', categoryId: c.id, from: d.from30, to: d.today }) : null
+        })), format: (v) => fmt.money(v), label: t('dash.categories')
+      })
         : h('p.muted.small', t('dash.noSales')),
       table: () => miniTable([{ label: t('products.category'), value: (r) => r.name }, { label: t('dash.share'), num: true, value: (r) => `${r.share}%` }, { label: t('dash.netSales'), num: true, value: (r) => fmt.money(r.net) }], d.categories),
     });
@@ -113,11 +155,11 @@ export async function render(page, { params, navigate }) {
       }));
     }
     mount(body,
-      h('div.dash-section', h('h2.section-title', icon('chart', 'sm'), t('dash.financialOverview')), h('div.stat-grid', ...financialTiles)),
-      h('div.dash-section', h('h2.section-title', icon('wallet', 'sm'), t('dash.paymentsCashflow')), h('div.stat-grid', ...paymentTiles)),
-      h('div.dash-section', h('h2.section-title', icon('box', 'sm'), t('dash.inventoryAlerts')), h('div.stat-grid', ...inventoryTiles)),
+      financialTiles.length ? h('div.dash-section', h('h2.section-title', icon('chart', 'sm'), t('dash.financialOverview')), h('div.stat-grid', ...financialTiles)) : null,
+      paymentTiles.length ? h('div.dash-section', h('h2.section-title', icon('wallet', 'sm'), t('dash.paymentsCashflow')), h('div.stat-grid', ...paymentTiles)) : null,
+      inventoryTiles.length ? h('div.dash-section', h('h2.section-title', icon('box', 'sm'), t('dash.inventoryAlerts')), h('div.stat-grid', ...inventoryTiles)) : null,
       actionTiles.length ? h('div.dash-section', h('h2.section-title', icon('check', 'sm'), t('dash.accountsApprovals')), h('div.stat-grid', ...actionTiles)) : null,
-      h('div.dash-section', h('h2.section-title', icon('chart', 'sm'), t('dash.trend')), h('div.grid-2', ...charts)));
+      showCharts && charts.length ? h('div.dash-section', h('h2.section-title', icon('chart', 'sm'), t('dash.trend')), h('div.grid-2', ...charts)) : null);
   }
   await load();
 }

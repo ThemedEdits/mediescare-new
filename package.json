@@ -8,6 +8,7 @@
   "author": "Mediescare",
   "scripts": {
     "start": "node scripts/start.js",
+    "start:local": "node scripts/start.js --local",
     "postinstall": "node scripts/fetch-native.js",
     "test": "node scripts/run-tests.js",
     "test:ui": "node scripts/run-ui.js",

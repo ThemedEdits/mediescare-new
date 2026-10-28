@@ -98,7 +98,7 @@ function render({
     <table class="meta"><tr><td>Bill</td><td class="num">${esc(sale.docNo)}</td></tr>
       <tr><td>Date</td><td class="num">${esc(fmtDate(sale.soldAt, dateFormat))} ${esc(fmtTime(sale.soldAt))}</td></tr>
       <tr><td>Cashier</td><td class="num">${esc(sale.cashierName)}</td></tr>
-      ${sale.customerName ? `<tr><td>Customer</td><td class="num">${esc(sale.customerName)}</td></tr>` : ''}
+      <tr><td>Customer</td><td class="num">${esc(sale.customerName || 'Walk-in Customer')}</td></tr>
       ${rx ? `<tr><td>Patient</td><td class="num">${esc(rx.patientName)}</td></tr><tr><td>Doctor</td><td class="num">${esc(rx.doctorName)}</td></tr>` : ''}
     </table>`;
   const items = thermal

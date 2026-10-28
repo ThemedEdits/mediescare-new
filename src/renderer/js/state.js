@@ -26,4 +26,13 @@ export function applyPrefs() {
   else delete root.dataset.theme;
   if (prefs.density === 'compact') root.dataset.density = 'compact';
   else delete root.dataset.density;
+
+  if (window.mediescare && typeof window.mediescare.setTheme === 'function') {
+    let effectiveTheme = prefs.theme || 'system';
+    if (effectiveTheme === 'system') {
+      const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      effectiveTheme = isSystemDark ? 'dark' : 'light';
+    }
+    window.mediescare.setTheme(effectiveTheme);
+  }
 }

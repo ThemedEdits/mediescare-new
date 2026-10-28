@@ -3,12 +3,28 @@ import { h } from './dom.js';
 
 let current = null;
 
-export function closePopover() {
-  if (current) { current.close(); current = null; }
+export function isPopoverOpen(anchor) {
+  return !!(current && current.anchor === anchor && !current.isClosing);
+}
+
+export function closePopover(immediate = false) {
+  if (current) {
+    const c = current;
+    current = null;
+    c.close(immediate);
+  }
 }
 
 export function popover(anchor, content, { align = 'left', width } = {}) {
-  closePopover();
+  if (current) {
+    if (current.anchor === anchor && !current.isClosing) {
+      closePopover();
+      return null;
+    }
+    current.destroyNow();
+    current = null;
+  }
+
   const el = h('div.popover', { role: 'dialog', style: width ? { width: `${width}px`, maxWidth: `${width}px` } : null }, content);
   document.getElementById('overlays').append(el);
   const r = anchor.getBoundingClientRect();
@@ -17,18 +33,47 @@ export function popover(anchor, content, { align = 'left', width } = {}) {
   left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
   el.style.left = `${left}px`;
   const below = r.bottom + 6;
-  el.style.top = `${below + el.offsetHeight > window.innerHeight - 8 ? Math.max(8, r.top - el.offsetHeight - 6) : below}px`;
+  const isAbove = below + el.offsetHeight > window.innerHeight - 8;
+  el.style.top = `${isAbove ? Math.max(8, r.top - el.offsetHeight - 6) : below}px`;
+  if (isAbove) el.classList.add('popover-above');
 
-  function onDown(e) { if (!el.contains(e.target) && !anchor.contains(e.target)) closePopover(); }
-  function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closePopover(); anchor.focus(); } }
+  function onDown(e) {
+    if (!el.contains(e.target) && !anchor.contains(e.target)) closePopover();
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      closePopover();
+      anchor.focus();
+    }
+  }
+
   setTimeout(() => document.addEventListener('mousedown', onDown, true), 0);
   document.addEventListener('keydown', onKey, true);
+
+  let closing = false;
   const handle = {
+    anchor,
     el,
-    close() {
-      el.remove();
+    get isClosing() { return closing; },
+    close(immediate = false) {
+      if (closing) return;
+      closing = true;
       document.removeEventListener('mousedown', onDown, true);
       document.removeEventListener('keydown', onKey, true);
+      if (immediate || !el.isConnected) {
+        el.remove();
+        return;
+      }
+      el.classList.add('popover-closing');
+      el.addEventListener('animationend', () => el.remove(), { once: true });
+      setTimeout(() => { if (el.isConnected) el.remove(); }, 180);
+    },
+    destroyNow() {
+      closing = true;
+      document.removeEventListener('mousedown', onDown, true);
+      document.removeEventListener('keydown', onKey, true);
+      el.remove();
     },
   };
   current = handle;

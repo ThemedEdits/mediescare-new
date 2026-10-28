@@ -10,6 +10,8 @@ function rolePermissions(role) {
 function withinActor(ctx, role) {
   if (ctx.isSuper) return true;
   if (role.is_super) return false;
+  // Non-super admins (like branch admins) cannot edit Branch Admin or Super Admin
+  if (role.name === 'Branch Admin' || role.name === 'Super Admin') return false;
   return rolePermissions(role).every((p) => ctx.can(p));
 }
 

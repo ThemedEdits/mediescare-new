@@ -7,7 +7,7 @@ import { call } from '../api.js';
 import { state, can } from '../state.js';
 import { toastError } from '../ui/toast.js';
 import { combobox } from '../ui/combobox.js';
-import { exportButton, printButton, filterSelect, productPicker } from '../ui/stockui.js';
+import { exportButton, printButton, filterSelect, productPicker, numberInput } from '../ui/stockui.js';
 import { lineChart, barChart, chartCard } from '../ui/charts.js';
 import * as fmt from '../ui/format.js';
 
@@ -147,7 +147,7 @@ export async function renderReport(page, { params, navigate }) {
       (v) => { f.method = v; run(); }, { value: f.method, width: '170px' }));
   }
   if (has('days')) {
-    const daysEl = h('input.input', { type: 'number', min: 0, max: 3650, value: f.days, style: { width: '100px' }, 'aria-label': t('reports.days') });
+    const daysEl = numberInput({ min: 0, max: 3650, value: f.days, style: { width: '100px' }, 'aria-label': t('reports.days') });
     daysEl.addEventListener('change', () => { f.days = daysEl.value || '90'; run(); });
     controls.push(h('label.row.small.muted', t('reports.days'), daysEl));
   }

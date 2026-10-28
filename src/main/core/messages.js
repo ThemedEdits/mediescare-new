@@ -77,6 +77,7 @@ const en = {
   'products.maxBelowMin': 'Maximum stock cannot be less than minimum stock.',
   'products.unitDuplicate': 'Two selling units have the same name: {name}.',
   'products.inactive': '{product} is deactivated.',
+  'products.onlyHeadOffice': 'Only Head Office can add new medicines and products to the catalog.',
 
   // Stock
   'stock.notEnough': 'Only {available} are available in batch {batch} of {product}. You entered {wanted}.',

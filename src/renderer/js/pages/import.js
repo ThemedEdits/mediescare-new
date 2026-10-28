@@ -27,7 +27,7 @@ export async function render(page, { params, navigate }) {
   function stepChoose() {
     const kindSel = filterSelect(kinds.map((k) => ({ value: k.key, label: k.title })), (v) => { kind = v; stepChoose(); }, { value: kind, width: '220px' });
     const file = h('input', { type: 'file', accept: '.csv,.txt,.xlsx,.xls,.json,.xml', hidden: true });
-    const pick = h('button.btn.primary', { type: 'button', onclick: () => file.click() }, icon('upload', 'sm'), t('import.chooseFile'));
+    const pick = h('button.btn.primary', { type: 'button', onclick: () => file.click() }, icon('download', 'sm'), t('import.chooseFile'));
     file.addEventListener('change', () => busy(pick, t('common.loading'), async () => {
       const f = file.files[0];
       if (!f) return;

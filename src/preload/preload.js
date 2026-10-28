@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('mediescare', {
   call: (method, params) => ipcRenderer.invoke('rpc', { method: String(method), params: params || {} }),
+  setTheme: (theme) => ipcRenderer.send('theme:change', theme),
   // Only used by the customer display window: receives the running bill from the main process.
   onDisplay: (fn) => ipcRenderer.on('display', (_e, data) => fn(data)),
 });

@@ -8,11 +8,12 @@ const { catalogue, isKnown } = require('../core/permissions');
 const { rolePermissions, withinActor, assertCanGrantRole } = require('./guards');
 
 function shape(ctx, r) {
+  const isProtectedSystem = r.is_super || (!ctx.isSuper && (r.name === 'Branch Admin' || r.name === 'Super Admin'));
   return {
     id: r.id, name: r.name, description: r.description, permissions: rolePermissions(r), isSuper: r.is_super === 1,
     isSystem: r.is_system === 1, active: r.active === 1, userCount: r.user_count || 0, updatedAt: r.updated_at,
     // The screen greys out roles this user may not edit or hand out.
-    canManage: !r.is_super && withinActor(ctx, r),
+    canManage: !isProtectedSystem && withinActor(ctx, r),
   };
 }
 
@@ -67,7 +68,7 @@ function register(define) {
 
   define('roles.update', { perm: 'roles.edit' }, (ctx, params) => {
     const role = load(ctx.db, v.id(params, 'id'));
-    if (role.is_super) fail('FORBIDDEN', 'roles.systemLocked');
+    if (role.is_super || (!ctx.isSuper && (role.name === 'Branch Admin' || role.name === 'Super Admin'))) fail('FORBIDDEN', 'roles.systemLocked');
     assertCanGrantRole(ctx, role);
     const name = v.text(params, 'name', 'Role name', { required: true, max: 60 });
     const description = v.text(params, 'description', 'Description', { max: 300 });
@@ -93,7 +94,7 @@ function register(define) {
 
   define('roles.setActive', { perm: 'roles.delete' }, (ctx, params) => {
     const role = load(ctx.db, v.id(params, 'id'));
-    if (role.is_super) fail('FORBIDDEN', 'roles.systemLocked');
+    if (role.is_super || (!ctx.isSuper && (role.name === 'Branch Admin' || role.name === 'Super Admin'))) fail('FORBIDDEN', 'roles.systemLocked');
     assertCanGrantRole(ctx, role);
     const active = v.bool(params, 'active');
     if (!active && role.user_count > 0) fail('IN_USE', 'roles.inUse', { count: role.user_count });

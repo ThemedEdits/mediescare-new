@@ -373,6 +373,8 @@ function register(define) {
   define('products.get', { perm: ['products.view', 'pos.view', 'purchases.view', 'transfers.view', 'stock.view'] }, (ctx, params) => detail(ctx, v.id(params, 'id')));
 
   define('products.create', { perm: 'products.create' }, (ctx, params) => {
+    const b = ctx.db.prepare('SELECT is_head_office FROM branches WHERE id = ?').get(ctx.branchId);
+    if (b && !b.is_head_office && !ctx.isSuper) fail('FORBIDDEN', 'products.onlyHeadOffice');
     const { f, extra, barcodes } = readForm(ctx, params, null);
     if (!canSeeCost(ctx)) f.trade_price = 0;
     let id;

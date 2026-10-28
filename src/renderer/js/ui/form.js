@@ -3,8 +3,14 @@ import { h } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../strings/index.js';
 import { customSelect } from './custom-select.js';
+import { customStepper, numberInput } from './custom-stepper.js';
+
+export { customStepper, numberInput };
 
 export function input(props = {}) {
+  if (props && props.type === 'number') {
+    return customStepper(props);
+  }
   return h('input.input', { type: 'text', autocomplete: 'off', spellcheck: 'false', ...props });
 }
 

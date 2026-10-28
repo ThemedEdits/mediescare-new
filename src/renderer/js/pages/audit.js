@@ -27,7 +27,7 @@ export async function render(page, { params, navigate }) {
   const filters = await call('audit.filters');
   const f = { module: '', action: '', userId: '', from: '', to: '', recordId: params.recordId || '', recordType: params.recordType || '' };
 
-  const exportBtn = can('audit.export') ? h('button.btn', { type: 'button' }, icon('download', 'sm'), t('common.export')) : null;
+  const exportBtn = can('audit.export') ? h('button.btn', { type: 'button' }, icon('upload', 'sm'), t('common.export')) : null;
   page.append(h('div.page-head', h('div', h('h1', t('audit.title')), h('p.sub', t('audit.sub'))), exportBtn));
 
   const moduleBox = combobox({ options: filters.modules.map((m) => ({ value: m, label: fmt.humanize(m) })), emptyLabel: `${t('audit.module')}: ${t('common.all')}`, onChange: (v) => { f.module = v; reload(); } });
@@ -68,7 +68,7 @@ export async function render(page, { params, navigate }) {
 
   if (exportBtn) {
     exportBtn.addEventListener('click', () => menu(exportBtn, ['csv', 'txt', 'json', 'xml'].map((format) => ({
-      iconEl: icon('download', 'sm'), label: `${t('audit.exportAs')} ${format.toUpperCase()}`,
+      iconEl: icon('upload', 'sm'), label: `${t('audit.exportAs')} ${format.toUpperCase()}`,
       onClick: async () => {
         try {
           const res = await call('audit.export', { ...query(), format });

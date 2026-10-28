@@ -4,7 +4,7 @@ import { icon } from '../ui/icons.js';
 import { t } from '../strings/index.js';
 import { call } from '../api.js';
 import { toast, toastError } from '../ui/toast.js';
-import { productPicker, batchSelect, filterSelect } from '../ui/stockui.js';
+import { productPicker, batchSelect, filterSelect, numberInput } from '../ui/stockui.js';
 import { busy } from '../ui/form.js';
 
 export async function render(page, { params }) {
@@ -16,7 +16,7 @@ export async function render(page, { params }) {
   async function add(p, batchId = '') {
     const sel = await batchSelect(p.id, { includeExpired: true, status: 'in_stock', value: batchId });
     sel.options[0].textContent = t('labels.noBatch');
-    const copies = h('input.input', { type: 'number', min: 1, max: 500, value: 1, style: { width: '80px' } });
+    const copies = numberInput({ min: 1, max: 500, value: 1, style: { width: '84px' } });
     const it = { product: p, sel, copies };
     it.row = h('tr', h('td', p.label), h('td', sel), h('td', copies), h('td', h('button.btn.ghost.sm.icon-only', { type: 'button', 'aria-label': t('common.remove'), onclick: () => { items.splice(items.indexOf(it), 1); it.row.remove(); refresh(); } }, icon('x', 'sm'))));
     for (const el of [sel, copies]) el.addEventListener('change', refresh);
